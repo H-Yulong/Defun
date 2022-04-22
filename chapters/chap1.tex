@@ -1,0 +1,37 @@
+% !TEX root = ../main.tex
+
+Dependent types are widely used on verifying the correctness of large-scale programs. However, verified programs are not guaranteed to remain correct after the compiling and linking stages. The reason is that current compiler implementations remove all typing information, which contains program specifications and program invariants. Unlike the source program, the target program cannot be type-checked to ensure its correctness statically. One solution is developing \textit{type-preserving compilers} – compilers that turn source programs into dependently-typed intermediate languages, so that type-checking compiled and linked programs becomes possible.
+
+This dissertation studies the \textit{defunctionalization} transformation, a program transformation that turns a higher-order functional program into a first-order one by replacing every function with a first-class \textit{label}. Type-preserving defunctionalization for simply-typed and polymorphic systems was studied in the literature \cite{reynolds1972definitional,pottier2004polymorphic}, and my work develops a type-preserving defunctionalization method for a realistic dependently typed calculus.
+
+This introduction explains the expressive power of dependent types and how they can be used for program specifications. It then motivates the development of type-preserving compilers for dependent types, and gives an overview of the dissertation. Related works are also discussed.
+
+\section{Motivation and overview of dissertation}
+
+Dependent types are powerful tools for specifying program invariants and proving program properties along with the development. The power of dependent types comes from their expressiveness combined with the Curry-Howard correspondence, in particular, the \textit{proposition-as-types} principle. In a dependent type theory, types may contain term variables and the type of a function’s output could depend on the \textit{value} of its input. The type of a dependent function is denoted as $\Pi x:A.\ B(x)$, where $B$ is called an \textit{indexed family} of types (indexed by terms of type $A$). Using these properties, we can specify invariants and Hoare-logic style pre- and post-conditions for programs as types, and dependent type-checking guarantees that the specified conditions hold. Dependent type systems are used for verifying the functional correctness of a range of large-scale software, from the CompCert C compiler \cite{leroy2006formal} to the CertiKOS OS kernel \cite{gu2015deep}.
+
+However, we cannot guarantee the correctness of compiled and linked programs, since compilers might introduce errors due to mistakes in their implementation. Even if we use trusted compilers, programmers could link incompatible parts of compiled programs. There is no way to enforce correctness on target codes with dependent type systems, since current implementations of compilers remove type information, making type-checking after compilation impossible.
+
+This problem can be solved with type-preserving compilers. These compilers preserve function behaviours and program semantics like regular compilers. Furthermore, they keep the type information – well-typed source programs are turned into well-typed target programs in a dependently-typed intermediate language. Using the preserved types, we can perform type-checking to ensure that program specifications and invariants still hold in separately compiled and linked programs, and only remove type information after the program is fully linked and checked.
+
+Developing type-preserving compilers for dependent types is not about inventing new constructions. Instead, the goal is to adapt existing compiler transformations so that they have the same functionalities as before while preserving types. This dissertation studies the defunctionalization, a program transformation for eliminating higher-order functions, in a dependently-typed setting.
+
+Chapter 2 explains the type-preserving defunctionalization transformation in System F with algebraic data types from the literature and introduces the Calculus of Constructions (CC), a dependently-typed calculus that is our source language.
+
+Chapter 3 shows that the approach used for defunctionalization in System F does not extend to dependently typed languages because definitions of function labels rely on impredicativity, which is not allowed in inductive definitions, as it is a source of contradiction.
+
+Chapter 4 investigates the abstract transformation: designing a “magical” language which has defunctionalization for free – it includes function labels as primitives in the syntax, and its context contains the function definitions. This chapter formally defines the target language, Defunctionalized Calculus of Constructions (DCC) and the transformation from CC to it, with a proof that the transformation is both type-preserving and meaning-preserving.
+
+Chapter 5 shows that the target language DCC is consistent when interpreted as logic, and it is type-safe as a programming language. The proof is based on a ``backward transformation'' from DCC to CC, showing that the target language can be encoded in the source language.
+
+Chapter 6 considers details in the implementation of DCC and the transformation in OCaml.
+
+\section{Related works}
+
+Type-preserving compilation was initially developed for optimizing and verifying compiled codes, and it is a well-known technique in compiler design for languages that are not dependently typed. Tarditi et al. \cite{tarditi1996til} developed TIL (typed intermediate language), an ML compiler featuring type-directed code optimization of loops, garbage collections, and polymorphic function calls. 
+
+Morrisett et al. \cite{morrisett1999system} developed a type-preserving translation from System F to TAL (typed assembly language). Later, Xi and Harper \cite{xi2001dependently} introduced DTAL, which extends TAL with a restricted form of dependent types, making it suitable for compiling a variant of ML with dependent datatype extensions. Necula’s proof-carrying code \cite{necula1997proof} is another early method for generating reliable executables. It relies on an external logical framework to check the correctness of proofs attached with codes.
+
+Most work about compiling with dependent types are due to Bowman et al., including the type-preserving continuation-passing style (CPS) and closure conversion transformations \cite{bowman2017type,bowman2018typed}.
+
+

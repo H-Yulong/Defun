@@ -1,0 +1,71 @@
+%% 
+%% ACS project dissertation template. 
+%% 
+%% Currently designed for printing two-sided, but if you prefer to 
+%% print single-sided just remove ",twoside,openright" from the 
+%% \documentclass[] line below. 
+%%
+%%
+%%   SMH, May 2010. 
+
+
+\documentclass[a4paper,12pt]{report}
+
+
+%%
+%% EDIT THE BELOW TO CUSTOMIZE
+%%
+
+\def\authorname{Yulong Huang\xspace}
+\def\authorcollege{Robinson College\xspace}
+\def\authoremail{yh419@cam.ac.uk}
+\def\dissertationtitle{Defunctionalization for dependently-typed languages}
+\def\wordcount{?}
+
+
+%\usepackage[dvips]{epsfig,graphics} 
+\usepackage{epsfig,graphicx,verbatim,parskip,tabularx,setspace,xspace}
+\usepackage{microtype}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true}
+
+
+%% START OF DOCUMENT
+\begin{document}
+
+
+%% FRONTMATTER (TITLE PAGE, DECLARATION, ABSTRACT, ETC) 
+% \pagestyle{empty}
+% \singlespacing
+% \input{titlepage}
+% \onehalfspacing
+% \input{declaration}
+% \singlespacing
+% \input{abstract}
+
+% \pagenumbering{roman}
+% \setcounter{page}{0}
+% \pagestyle{plain}
+% \tableofcontents
+% \listoffigures
+% \listoftables
+
+% \onehalfspacing
+
+%% START OF MAIN TEXT 
+
+\chapter{Introduction}
+\pagenumbering{arabic} 
+\setcounter{page}{1} 
+\input{chapters/chap1}
+
+
+
+
+%\appendix
+\singlespacing
+{}
+\bibliographystyle{unsrt} 
+\bibliography{references} 
+
+\end{document}
