@@ -1,0 +1,53 @@
+% !TEX root = ../main.tex
+
+
+
+\section{Transformation}
+
+$\bbracket{e} = \target{e}$ where $\Gamma \vdash e : A \leadsto \target{e}$.
+
+\begin{figure}
+	\begin{equation}
+		\tag{T-Var}
+		\frac
+			{}
+			{\Gamma \vdash x : A \leadsto \target{x}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{T-Universe}
+		\frac
+			{}
+			{\Gamma \vdash U_i : U_{i+1} \leadsto \target{U_i}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{T-Pi}
+		\frac
+			{\Gamma \vdash A : U_i \leadsto \target{A} \qquad \Gamma, x : A \vdash B : U_j \leadsto \target{B}
+			}
+			{\Gamma \vdash \pitype{x}{A}{B} : U_{max(i, j)} \leadsto \targetpi{x}{A}{B}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{T-Apply}
+		\qquad\qquad\qquad\qquad
+		\frac
+			{\Gamma \vdash e_1 : \pitype{x}{A}{B} \leadsto \target{e_1} \qquad \Gamma \vdash e_2 : A \leadsto \target{e_2}}
+			{\Gamma \vdash e_1 \ e_2 : B\sub{e2}{x} \leadsto \targetapp{e_1}{e_2}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{T-Lambda}
+		\qquad\qquad\qquad\qquad\quad
+		\frac
+			{ \text{FV}(\lami{i}{x}{A}{e}) = \bar{x} : \bar{A} }
+			{ \Gamma \vdash \lami{i}{x}{A}{e} : \pitype{x}{A}{B} \leadsto \target{\flabel_i}\{\target{\bar{x}}\}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{T-Equv}
+		\frac
+			{\Gamma \vdash e : A \leadsto \target{e}}
+			{\Gamma \vdash e : B \leadsto \target{e}}
+	\end{equation}
+	\caption{Defunctionalization Transformation}
+    \label{fig:dcc transformation}
+\end{figure}
+
+

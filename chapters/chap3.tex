@@ -1,0 +1,90 @@
+% !TEX root = ../main.tex
+
+Chapter 2 illustrated that type-preserving defunctionalization can be done with ADTs for simple types and GADTs for polymorphic types. It is natural to conjecture that \textit{inductive families}, the further generalized version of GADTs in dependently typed languages, can be used to defunctionalize dependently typed programs. This chapter shows that it is not the case -- previous definitions of function labels relied on impredicativity, which is not allowed in dependently typed inductive definitions.
+
+\section{Inductive families}
+
+This section introduces Agda-style inductively defined data types (inductive families), and Agda-like syntax is used in code examples. In Agda, there is an infinite hierarchy of predicative universes $\mathtt{Set : Set_1 : Set_2 : \cdots}$, and $\pitype{x}{A}{B}$ is written as \texttt{(x:A) -> B}. 
+
+Inductive families can be considered as a further generalized version of GADTs: parameters of a constructor's return type can be instantiated with both types and values. In fact, we view the instantiated values as indices of the inductive definition, and constructors may return elements in an arbitrary type of the indexed family. For example, we can define \texttt{Fin}, the inductive family of finite sets.
+
+\begin{exmp} \texttt{Fin} is an inductive family indexed by natural numbers, and there are exactly \texttt{n} valid expressions of type \texttt{Fin n}.
+\begin{lstlisting}[escapechar=@]
+data Fin : Nat -> Set where
+    fzero : (n : Nat) -> Fin (suc n)
+    fsuc : (n : Nat) -> Fin n -> Fin (suc n)
+\end{lstlisting}
+\end{exmp}
+
+In general, inductive families are defined in the following form:
+\begin{lstlisting}[escapechar=@]
+data D : (@\codemath{y_1}@ : @\codemath{T_1}@) -> @\codedots@ -> (@\codemath{y_n}@ : @\codemath{T_n}@) -> @\codemath{Set_d}@ where
+    @\codemath{c}@ : (@\codemath{z_1}@ : @\codemath{S_1}@) -> @\codedots@ -> (@\codemath{z_m}@ : @\codemath{S_m}@) -> (D @\codemath{t_1}@ @\codedots@ @\codemath{t_n}@)
+    @\codedots@
+\end{lstlisting}
+\texttt{D} is an inductive family in \codemath{Set_d} indexed by terms of type \codemath{T_1, \cdots, T_n}. Constructor \texttt{c} takes arguments \texttt{(\codemath{z_i:S_i})} and constructs an element of type \texttt{(\codemath{D\ t_1\ \cdots \ t_n})}, where each \codemath{t_i} is an expression of type \codemath{T_i}. Note that arguments to \texttt{D} and \texttt{c} are dependently typed -- \codemath{y_1 \cdots y_i} may appear in \codemath{T_{i+1}}, and \codemath{z_1 \cdots z_i} may appear in \codemath{S_{i+1}}. Also, \codemath{y_i} are not bound to constructors.
+
+Not all inductive definitions are consistent -- some contain impredicative constructors (the constructor's universe is larger than the data type's), and some admit non-terminating functions. These definitions are sources of paradoxes, which we exclude by imposing a \textit{universe rule} and a \textit{positivity rule} on inductive definitions. Take data type \texttt{D} defined above as an example, the two rules require:
+\begin{itemize}
+  \item Types of its constructors must fit in the universe of \texttt{D}.
+  \item \texttt{D} must occur \textit{strictly positively} in types of its constructor's arguments.
+\end{itemize}
+
+Concretely, the universe rule requires the universe of every argument type \codemath{S_i} (that is, the type of \codemath{S_i}) to be smaller than \codemath{Set_d}. The positivity rules states that constructors cannot return self-indexing types like \texttt{(D (D \codedots )} \texttt{\codedots )}, and every argument type \codemath{S_i} must either:
+\begin{itemize}
+  \item do not mention \texttt{D} at all.
+  \item mention \texttt{D} in the form \texttt{\codemath{S_i} = (\codemath{z_1 : C_1}) -> \codemath{\cdots} -> (\codemath{z_k : C_k}) -> D}, where \texttt{D} does not occur in any \codemath{C_j} (arguments to \texttt{D} omitted).
+\end{itemize}
+
+\section{Failure to defunctionalize}
+
+In this section, I prove that it is impossible to perform defunctionalization using inductive families. In polymorphic defunctionalization, a function of type $a \rightarrow b$ is translated to a constructor of a GADT $Lam$, and the constructor's return type is $Lam\ a\ b$. Similarly, we can try to define an inductive family $Pi$, and translate each dependent function of type $\pitype{x}{A}{B}$ to a constructor of $Pi\ A\ B$. 
+
+Suppose the source language is CC and the target language is CC extended with Agda-style inductive families. Let $\bbracket{-}$ denotes the defunctionalization transformation for terms, types and environments. A list of reasonable assumptions is made on $\bbracket{-}$:
+\begin{itemize}
+  \item $\bbracket{-}$ acts pointwise on contexts, i.e. $\bbracket{\cdot} = \cdot$ and $\bbracket{\Gamma, x : A} = \bbracket{\Gamma}, x : \bbracket{A}$.
+  \item $\bbracket{f} = Fun$, i.e. $\bbracket{-}$ turns a function in source to a unique constructor $Fun$ of an inductively defined data type in target, and each free variable in $f$ corresponds to an argument to $Fun$.
+\end{itemize}
+Note that CC and $\bbracket{-}$ make no explicit distinction between terms and types.
+
+\begin{definition}[Type preservation]
+For all $\Gamma, e, A$ in the source language:
+\begin{equation*}
+	\Gamma \vdash e : A \quad \Longrightarrow \quad \bbracket{\Gamma} \vdash \bbracket{e} : \bbracket{A}.
+\end{equation*}
+\label{def: type-preservation}
+\end{definition}
+In other words, well-typed source programs are translated to well-typed target programs. Clearly, the hypothesis of having a type-preserving transformation where $\bbracket{\pitype{x}{A}{B}} = Pi\ \bbracket{A}\ \bbracket{B}$ does not hold, since it translates functions of type $Nat \rightarrow (Nat \rightarrow Nat)$ to constructors returning $Pi\ \bbracket{Nat}\ (Pi\ \bbracket{Nat}\ \bbracket{Nat})$, which violates the positivity rule of inductive definitions. In fact, we cannot translate $\pitype{x}{A}{B}$ to an element of any inductive family in a type-preserving way.
+
+\begin{lemma}(Universe preservation) If $\bbracket{-}$ is type-preserving, then there is a universe hierarchy in the target language. 
+\paragraph{Proof} Suppose $\bbracket{-}$ is type-preserving. We have:
+\begin{equation*}
+	\cdot \vdash 0 : Nat : U_0 : U_1 : \cdots
+\end{equation*}
+By type-preservation, we must have 
+\begin{equation*}
+	\cdot \vdash \bbracket{0} : \bbracket{Nat} : \bbracket{U_0} : \bbracket{U_1} : \cdots
+\end{equation*}
+in the target language. $\bbracket{U_0}$ is a universe (since it is the type of a type) and $\bbracket{U_0} : \bbracket{U_1} : \cdots$ forms a hierarchy of universes. $\qed$
+\label{lemma : universe}
+\end{lemma}
+
+From now, I abuse notations and write $U_0, U_1, \cdots$ for the universe hierarchy in the target language as well. 
+
+\begin{theorem} If $\bbracket{-}$ is type-preserving, then $\bbracket{\pitype{x}{A}{B}}$ cannot be an element of any inductive family.
+\paragraph{Proof} Assume that $\bbracket{-}$ is type-preserving and $\bbracket{\pitype{x}{A}{B}}$ is an element of an inductive family $D$. Suppose we have a source-language function $\Gamma \vdash f : \pitype{x}{A}{B}$ and $\Gamma \vdash \pitype{x}{A}{B} : U_f$. Then, $D$ must be defined in the following form:
+\begin{equation*}
+	data\ D\ :\ (y_1 : T_1)\ \rightarrow\ \cdots\ \rightarrow\ (y_n : T_n)\ \rightarrow\ U_f
+\end{equation*}
+$D$ is in universe $U_f$ by Lemma \ref{lemma : universe}. Also, $\bbracket{f} = Fun$, where $Fun$ is a valid constructor of $D$ in the form of:
+\begin{equation*}
+	Fun\ :\  (z_1 : S_1)\ \rightarrow\ \cdots\ \rightarrow\ (z_n : S_n)\ \rightarrow\ \bbracket{\pitype{x}{A}{B}}
+\end{equation*}
+where each $(z_i : S_i)$ corresponds to a free variable in $f$. Since $Fun$ is a valid constructor, the universe of each $S_i$ must be smaller than $U_f$ by the universe rule. However, this is not true in general: functions may have free variables from arbitrarily high universes. Therefore, we have a contradiction. $\qed$
+\label{theorem: dfc}
+\end{theorem}
+
+We know that a type-preserving transformation cannot take $\bbracket{\pitype{x}{A}{B}} = Pi\ \bbracket{A}\ \bbracket{B}$, as it translates functions of type $Nat \rightarrow (Nat \rightarrow Nat)$ to constructors returning $Pi\ \bbracket{Nat}\ (Pi\ \bbracket{Nat}\ \bbracket{Nat})$, which fails the positivity check. Theorem \ref{theorem: dfc} shows that, even if there exists a programming technique which can cleverly avoid the positivity problem, we are still unable to perform type-preserving defunctionalization using inductive families. The universe of $\pitype{x}{A}{B}$ is \textit{fixed} by universe preservation, so, functions whose type is in $U_f$ should be translated to constructors of an inductive family in $U_f$. Arguments to these constructors should be in universes smaller than $U_f$, but there is no restriction on how high-up a free variable can be. Previous methods relied on the fact that any type can be an argument to a constructor, which is impredicative in nature.
+
+
+

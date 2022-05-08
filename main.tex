@@ -29,6 +29,41 @@
 \usepackage{listings}
 \lstset{basicstyle=\ttfamily\footnotesize,breaklines=true}
 
+\usepackage{amsmath, amssymb, latexsym}
+\usepackage{mathpartir, proof}
+\usepackage{xcolor}
+\usepackage{simplebnf}
+\usepackage{mathtools}
+\usepackage{amsthm}
+
+\theoremstyle{definition}
+\newtheorem{exmp}{Example}[section]
+\newtheorem{theorem}[exmp]{Theorem}
+\newtheorem{lemma}[exmp]{Lemma}
+\newtheorem{definition}[exmp]{Definition}
+
+\newcommand{\bbracket}[1]{{[\![ #1 ]\!]}}
+
+\newcommand{\target}[1]{{\color{purple}{\mathsf{#1}}}}
+\newcommand{\flabel}{\mathfrak{L}}
+\newcommand{\fdef}{\mathfrak{D}}
+
+\newcommand{\itemtype}[2]{\mathsf{\color{purple}#1 \color{black} \textsf{ : } \color{purple}#2}}
+\newcommand{\itemdef}[4]{#1\ \target{\boldsymbol{\mapsto}}\ \textsf{(}\{#2\}\textsf{,}\ #3\textsf{,}\ #4\textsf{)}}
+
+\newcommand{\targetpi}[3]{\mathsf{\color{purple}Pi\color{black}\textsf{(}\color{purple}#1\color{black}\textsf{,} \color{purple}#2\color{black}, \color{purple}#3\color{black}\textsf{)} }}
+\newcommand{\targetapp}[2]{\target{Apply\ #1 \ #2}}
+\newcommand{\targetlab}[2]{\target{#1}\{\target{#2}\}}
+\newcommand{\targetsub}[2]{[\target{#1} \slash \target{#2}]}
+
+\newcommand{\pitype}[3]{\Pi#1:#2.\ #3}
+\newcommand{\lam}[3]{\lambda#1:#2.\ #3}
+\newcommand{\lami}[4]{\lambda^{#1}#2:#3.\ #4}
+\newcommand{\sub}[2]{\textsf{[}#1\slash#2\textsf{]}}
+
+\newcommand{\codemath}[1]{$\mathtt{#1}$}
+\newcommand{\codedots}[0]{$\mathtt{\cdots}$}
+
 
 %% START OF DOCUMENT
 \begin{document}
@@ -54,12 +89,22 @@
 
 %% START OF MAIN TEXT 
 
-\chapter{Introduction}
-\pagenumbering{arabic} 
-\setcounter{page}{1} 
-\input{chapters/chap1}
+% \chapter{Introduction}
+% \pagenumbering{arabic} 
+% \setcounter{page}{1} 
+% \input{chapters/chap1}
 
+% \setcounter{chapter}{1}
+% \chapter{Background}
+% \input{chapters/chap2}
 
+% \setcounter{chapter}{2}
+% \chapter{A failed attempt}
+% \input{chapters/chap3}
+
+\setcounter{chapter}{3}
+\chapter{Abstract defunctionalization}
+\input{chapters/chap4}
 
 
 %\appendix

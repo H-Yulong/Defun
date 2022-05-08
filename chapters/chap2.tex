@@ -1,0 +1,275 @@
+% !TEX root = ../main.tex
+
+<This version of CC is a minimalistic subset of Agda.>
+
+Section 2.1 gives a survey about defunctionalization transformation in non-dependently typed systems. Section 2.2 presents the definition of the Calculus of Constructions (CC), the source language for dependently typed defunctionalization.
+
+\section{Defunctionalization}
+
+Defunctionalization is a whole-program transformation that turns higher-order functional programs into first-order ones. This section explains type-preserving defunctionalization for simply-typed and polymorphic source programs with illustrating examples.
+
+\subsection{Simply-typed programs}
+
+Defunctionalization is based on the observation that a program has only finitely many function definitions. Therefore, if the whole program is available to the compiler, it can enumerate every function and replace them with distinct constructors of an \textit{algebraic data type (ADT)} in the target language. I refer to these constructors as \textit{labels}. Function applications are translated to calls to an auxiliary \textit{apply} function, which takes a label and the function argument, performs case analysis on the label, and returns the result of the corresponding function applied to the argument. In other words, let $\bbracket{-}$ denotes the transformation, we define $ \bbracket{e_1\ e_2} = apply\ \bbracket{e_1}\ \bbracket{e_2} $, which simulates the behavior of $e_1\ e_2$ in the source language.
+
+Suppose our source language and target language are the same OCaml-like functional programming language with ADTs. Example \ref{ex:simple dfc} shows how to defunctionalize a higher-order program.
+
+\begin{exmp}
+Let the source program be:
+
+\begin{lstlisting}
+(* compose : (int -> bool) -> (int -> int) -> int -> bool *) 
+let compose g f x = g (f x) in
+    compose (fn x -> x > 0) (fn x : int -> x) 1 
+\end{lstlisting}
+It contains two first-class anonymous functions. To defunctionalize it, we define a data type \texttt{Lam} with two constructors, one for each function:
+\begin{lstlisting}
+(* ToBool represents (fn x -> x > 0) *)
+(* Id represents (fn x : int -> x) *)
+type Lam = ToBool | Id
+\end{lstlisting}
+We also need to define the auxiliary function \textit{apply}: \texttt{apply f arg} returns the result of
+applying the source-program function which \texttt{f} represents to the argument \texttt{arg}. If \texttt{f} is \texttt{ToBool}, it returns \texttt{arg > 0}, and similarly for case \texttt{Id}.
+\begin{lstlisting}
+let apply f arg = match f with
+	| ToBool -> arg > 0
+	| Id -> arg
+\end{lstlisting}
+Now, the defunctionalized target program can be obtained by replacing all the first-class functions with their corresponding labels and all the function applications with calls to \texttt{apply}.
+\begin{lstlisting}
+let compose' g f x = apply g (apply f x) in
+    compose' ToBool Id 1
+\end{lstlisting}
+Note that \texttt{compose'} now takes first-order values of type \texttt{Lam} instead of functions.
+\label{ex:simple dfc}
+\end{exmp}
+
+\subsubsection{Type preservation}
+
+Informally speaking, a type-preserving transformation turns a well-typed source program to a well-typed target program. The formal definition can be found in (some later section in Chapter 4). The reader might notice that, in Example \ref{ex:simple dfc}, the \texttt{apply} function is ill-typed. It returns a \texttt{bool} in case \texttt{ToBool} and returns an \texttt{int} in case \texttt{Id}. With a minor adjustment, we can make the transformation type-preserving:
+\begin{lstlisting}
+(* apply_int_bool : Lam -> int -> bool *)
+let apply_int_bool f arg = match f with
+	| ToBool -> arg > 0
+
+
+(* apply_int_int : Lam -> int -> int *)
+let apply_int_int f arg = match f with
+	| Id -> arg
+
+let compose' g f x = apply_int_bool g (apply_int_int f x) in
+    compose' ToBool Id 1
+\end{lstlisting}
+
+Two \texttt{apply} functions are defined – one for functions of type \texttt{int -> bool}, another one for functions of type \texttt{int -> int}. In general, we need to define a family of monomorphic \texttt{apply} functions, i.e. one specialized function \texttt{apply\_a\_b} for each function type \texttt{a -> b} in the source program.
+
+\subsection{Polymorphic programs}
+
+In languages with polymorphism, defunctionalization can be done similarly as in simply-typed scenarios – first-class functions are replaced by labels, and applications are translated to calls to the \textit{apply} function. The difference is that we only need one polymorphic \textit{apply}, and function labels are defined as constructors of a  \textit{generalized algebraic data type (GADT)}. GADTs allow data types to take type parameters, and constructors may return specific instantiations of the parameters. Suppose our target language now supports GADTs, Example \ref{ex: poly dfc} shows how to defunctionalize a polymorphic higher-order program.
+
+\begin{exmp} Consider the polymorphic composition function:
+\begin{lstlisting}
+(* compose : type a b c. (b -> c) -> (a -> b) -> a -> c *)
+let compose g f x = g (f x) in
+    compose (fn x -> x > 0) (fn x -> x) 1
+\end{lstlisting}
+\texttt{(fn x -> x)} is the polymorphic identity function. \texttt{Lam} takes two type parameters, and a function of type \texttt{a -> b} in the source program translates to a label of type \texttt{Lam a b}. Note that the constructor \texttt{ToBool}, which corresponds to a non-polymorphic function, has instantiated parameters. 
+\begin{lstlisting}
+type Lam 'a 'b = 
+	  ToBool : Lam int bool
+	| Id : Lam 'a 'a
+
+(* apply : type a b. Lam a b -> a -> b *)
+let apply f arg = match f with
+	| ToBool -> arg > 0
+	| Id -> arg
+\end{lstlisting}
+Again, the target program is obtained by replacing first-class functions with their corresponding labels and function applications with calls to \texttt{apply}, and the result is well-typed.
+\begin{lstlisting}
+(* compose' : type a b c. Lam b c -> Lam a b -> a -> c *)
+let compose' g f x = apply g (apply f x) in
+    compose ToBool Id 1
+\end{lstlisting}
+	\label{ex: poly dfc}
+\end{exmp}
+
+\subsubsection{Defunctionalize all functions}
+Defunctionalization was initially presented as a programming technique for eliminating functions with functional arguments \cite{reynolds1972definitional}. The concept and technique generalize to eliminating all functions in the source program \cite{chin1996higher}. In general, the label of a function \texttt{f:a -> b} with free variables \texttt{x1:t1, ..., xn:tn} has the form:
+\begin{lstlisting}
+Fun : t1 -> ... -> tn -> Lam a b
+\end{lstlisting}
+Arguments to the label form an \textit{environment} that maps free variables to values. A label with fully-applied arguments is similar to a \textit{closure}, except that a closure stores the function definition together with the environment, whereas defunctionalization keeps the function definition separately in \textit{apply}. Example \ref{ex: full dfc} shows a case of defunctionalizing functions with free variables.
+
+\begin{exmp} Let the source program be the curried version of integer addition:
+
+\begin{lstlisting}
+(* plus : int -> (int -> int) *)
+let plus = (fun x -> (fun y -> x + y)) in
+    plus 1 2
+\end{lstlisting}
+There are two function definitions in the code above. Applying the polymorphic defunctionalization technique, we define \texttt{Lam} and \texttt{apply} as:
+\begin{lstlisting}
+type Lam 'a 'b = 
+	  Plus : Lam int (Lam int int)
+	| Plus_x : int -> Lam int int
+
+let apply f arg = match f with
+	| Plus -> Plus_x arg
+	| (Plus_x x) -> x + arg
+\end{lstlisting}
+
+There is a free variable \texttt{x:int} in \texttt{(fun y -> x + y)}, so, the corresponding constructor \texttt{Plus\_x} takes an argument of type \texttt{int}.
+
+Finally, the target program:
+\begin{lstlisting}
+let plus' = Plus in
+	apply (apply plus' 1) 2
+\end{lstlisting}
+	\label{ex: full dfc}
+\end{exmp}
+
+\subsection{Related work in defunctionalization}
+
+Defunctionalization was first presented in its untyped form by Reynolds in the 1970s as a programming technique to translate a higher-order interpreter to a first-order one \cite{reynolds1972definitional}. It was later used as an implementation technique in various scenarios, from ML compilers \cite{chin1996higher,cejtin2000flow} to type-safe garbage collectors \cite{wang2001type}. The method of using a family of monomorphic \textit{apply} functions to achieve type preservation is the standard workaround in simply-typed scenarios, which can be found in \cite{bell1997type,tolmach1998ml,cejtin2000flow,nielsen2000denotational}. Danvy and Nielsen’s survey contains more examples of defunctionalization in practice \cite{danvy2001defunctionalization}.
+
+% Mention something about Lightweight higher-kinded polymorphism? It's an application of polymorphic DFC.
+
+Formalization of defunctionalization focused on proving type preservation and correctness of the transformation. Bell et al. proved that the transformation for simply typed programs is type preserving \cite{bell1997type}.  Nielsen gave a proof for its partial correctness in denotational semantics \cite{nielsen2000denotational}, and Banerjee et al. provided a proof for total correctness in operational semantics \cite{banerjee2001design}. Pottier and Gauthier formalized type-preserving polymorphic defunctionalization in System F extended with GADTs \cite{pottier2004polymorphic}.
+
+\section{Source language: the Calculus of\\ Constructions (CC)}
+
+The source language is a variant of Coquand’s Calculus of Constructions \cite{coquand1986calculus}, and its syntax is presented in Figure \ref{fig:cc syntax}. \textit{Universes}, also known as \textit{kinds} or \textit{sorts}, are essentially the types of types. CC uses an infinite hierarchy of predicative universes $U_i$, where $i$ ranges over natural numbers. Term expressions of CC include: variables (from an infinite set of variable names), universes, dependent function types (or $\Pi$-types), applications, and functions. A context is a list of variable-expression pairs.
+
+CC rules for typing (Fig \ref{fig:cc typing}) and well-formedness of contexts (Fig \ref{fig:cc context}) are mutual-inductively defined. The type of a universe $U_i$ is $U_{i+1}$, and the type of $\pitype{x}{A}{B}$ is the highest universe among universes of $A$ and $B$. Functions have types $\pitype{x}{A}{B}$, and applications have types $B[e_2\slash x]$, since the output of a function type may depend on the input value. A context is well-formed if every variable is associated with a valid type, that is, the associated expression’s type is a universe. 
+
+As a convention, $\Gamma \vdash A : U$ means that $\Gamma \vdash A : U_i$ for some $i$, and $A \rightarrow B$ stands for the $\Pi$-type $\pitype{x}{A}{B}$ where $B$ does not depend on $x$. Base types are omitted for simplicity, but some base types like the unit type and the natural numbers will be used freely in examples.
+
+Figure \ref{fig:cc equivalence} defines reduction and equivalence in CC. The only reduction is the $\beta$-reduction, and $e_1 \triangleright^* e_2$ means that $e_1$ reduces to $e_2$ in zero or more steps. Two terms are equivalent if they reduce to the same term or are $\eta$-equivalent. If an expression $e$ has type $A$ and $A \equiv B$ (under context $\Gamma$), then $e$ also has type $B$. The reduction rule can be thought of the operational semantics of CC.
+
+\begin{figure}
+	\renewcommand{\arraystretch}{1.3}
+	\begin{tabular}{l r l l}
+		\textit{Universes}   & $U$       & ::= & ${U_i}$ \\
+		\textit{Expressions} & ${e}$, ${A}$, ${B}$  & ::= & 
+			${x}$ $\ |\ $ ${U}$ $\ |\ $ $\pitype{x}{A}{B}$ $\ |\ $ ${e_1}\ {e_2}$ $\ |\ $ $\lam{x}{A}{e}$\\
+		\textit{Context} & ${\Gamma}$ & ::= & ${\cdot}$ $\ |\ $ ${\Gamma}$, ${x} : {A}$ \\
+	\end{tabular}
+
+	\caption{CC Syntax}
+    \label{fig:cc syntax}
+\end{figure}
+
+\begin{figure}
+	\begin{equation}
+		\tag{Var}
+		\frac
+			{x : A \in \Gamma \qquad \vdash \Gamma}
+			{\Gamma \vdash x : A}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{Universe}
+		\frac
+			{\vdash \Gamma}
+			{\Gamma \vdash U_i : U_{i+1}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{Pi}
+		\frac
+			{\Gamma \vdash A : U_i \qquad \Gamma, x : A \vdash B : U_j
+			}
+			{\Gamma \vdash \pitype{x}{A}{B} : U_{max(i, j)}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{Apply}
+		\frac
+			{\Gamma \vdash e_1 : \pitype{x}{A}{B} \qquad \Gamma \vdash e_2 : A}
+			{\Gamma \vdash e_1 \ e_2 : B\sub{e2}{x}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{Lambda}
+		\frac
+			{ \Gamma, x : A \vdash e : B}
+			{ \Gamma \vdash \lam{x}{A}{e} : \pitype{x}{A}{B}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{Equv}
+		\frac
+			{\Gamma \vdash e : A \qquad \Gamma \vdash B : U \qquad \Gamma \vdash A \equiv B}
+			{\Gamma \vdash e : B}
+	\end{equation}
+	\caption{CC Typing}
+    \label{fig:cc typing}
+\end{figure}
+
+\begin{figure}
+	\begin{equation}
+		\tag{WF-Empty}
+		\frac{ }{\quad \vdash {\cdot} \quad}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{WF-Con}
+		\frac
+			{\vdash \cdot \qquad \Gamma \vdash A : U}
+			{\vdash \Gamma , x : A}
+	\end{equation}
+	\caption{Well-formedness of CC context}
+    \label{fig:cc context}
+\end{figure}
+
+\begin{figure}
+	\begin{equation*}
+		\tag{Beta}
+		\lam{x}{e_1} \ e_2 \ \triangleright \ \sub{e_1}{e_2}
+	\end{equation*}
+	\begin{equation}
+		\tag{Eq-eq}
+		\frac
+			{\quad e_1 \triangleright^* e \qquad e_ 2\triangleright^* e \quad}
+			{\Gamma \vdash e_1 \equiv e_2}
+	\end{equation}
+	\begin{equation}
+		\tag{Eq-Eta1}
+		\qquad\qquad\qquad
+		\frac
+			{e_1 \triangleright^* \lam{x}{A}{e} \qquad
+			 e_2 \triangleright^* e_2' \qquad
+			 \Gamma, x : A \vdash e \equiv e_2'\ x}
+			{\Gamma \vdash e_1 \equiv e_2}
+	\end{equation}
+	\begin{equation}
+		\tag{Eq-Eta2}
+		\qquad\qquad\qquad
+		\frac
+			{ e_1 \triangleright^* e_1' \qquad
+			 e_2 \triangleright^* \lam{x}{A}{e} \qquad
+			 \Gamma, x : A \vdash e_1'\ x \equiv e }
+			{\Gamma \vdash e_1 \equiv e_2}
+	\end{equation}
+	\caption{CC reduction and equivalence}
+    \label{fig:cc equivalence}
+\end{figure}
+
+
+
+CC has a useful property: if $\Gamma \vdash e : A$, then $\Gamma \vdash A : U$. Precisely, in the derivation tree of $\Gamma \vdash e : A$, there must be a sub-derivation tree of $\Gamma \vdash A : U$.
+
+As standard results from the literature \cite{coquand1986calculus,luo1990extended}, CC is type safe, strongly normalizing (every well-typed program terminates), and consistent. Type-checking and type inference in CC are decidable. Despite having a minimalistic syntax, CC can express many useful functions, for example, the polymorphic identity function and the fully dependent composition function.
+
+\begin{exmp}[Polymorphic identity]
+In System F, the polymorphic identity function has type $\forall a.\ a \rightarrow a$. In CC, we can define a  dependent function that takes a type $A$ and returns the identity function of type $A \rightarrow A$.
+	\begin{align*}
+		&identity \triangleq \lam{A}{U_0}{\lam{x}{A}{x}} \\
+		\cdot \vdash\ &identity\ :\ \pitype{A}{U_0}{A \rightarrow A}
+	\end{align*}
+\end{exmp}
+
+\begin{exmp}[Fully dependent composition]
+This example shows that CC can express complicated but meaningful functions.
+	\begin{align*}
+		compose &\triangleq \lam{g}{(\pitype{x}{A}{\pitype{y}{B\ x}{C\ x\ y}})}{\lam{f}{(\pitype{x}{A}{B\ x})}{\lam{x}{A}{g\ x\ (f\ x)}}} \\
+		\Gamma &\triangleq \cdot,\ A : U_0,\ B : A \rightarrow U_0,\ C : \pitype{x}{A}{(B\ x) \rightarrow U_0}\\
+		\Gamma &\vdash compose : \pitype{g}{\_}{\pitype{f}{\_}{\pitype{x}{A}{C\ x\ (f\ x)}}} 
+	\end{align*}
+\end{exmp}
+
+
