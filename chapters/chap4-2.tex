@@ -1,53 +1,267 @@
 % !TEX root = ../main.tex
 
+\section{Defunctionalized Calculus of\\Constructions (DCC)}
 
+Defunctionalized Calculus of Constructions (DCC) is the target language of type-preserving defunctionalization, and its expressions are written in a \color{blue!95!white}{\textsf{san-serif blue font}} \color{black} to distinguish them from source language expressions. 
 
-\section{Transformation}
+\subsection{Syntax}
+Informally speaking, DCC is a language similar to CC, except that its syntax (Figure~\ref{fig:dcc syntax}) contains first-class function labels instead of lambda abstractions.
+DCC has an infinite hierarchy of predicative universes $\target{U_i}$, and its term expressions are: variables $\target{x}$ (from an infinite set of variable names), universes $\target{U}$, $\Pi$-types $\targetpi{x}{A}{B}$, applications $\targetapp{e_1}{e_2}$, and labels $\targetlab{\flabel}{\bar{e}}$.
 
-$\bbracket{e} = \target{e}$ where $\Gamma \vdash e : A \leadsto \target{e}$.
+A label expression $\targetlab{\flabel}{\bar{e}}$ is a label name $\target{\flabel}$ supplied with a list of free variables $\target{e_1}, \cdots, \target{e_n}$. Labels can take zero free variable, but a label name by itself is not a term. In other words, $\target{\flabel}$ is not a term, but $\targetlab{\flabel}{}$ is. I write $\target{\bar{e}}$ as an abbreviation of a list of zero or more expressions. Label names $\target{\flabel_1}, \target{\flabel_2}, \cdots$ come from an infinite set of names which is disjoint to the set of variable names, and I write labels in a different font from variables to emphasise this.
 
-\begin{figure}
-	\begin{equation}
-		\tag{T-Var}
-		\frac
-			{}
-			{\Gamma \vdash x : A \leadsto \target{x}}
-	\end{equation} \hspace{0.5cm}
-	\begin{equation}
-		\tag{T-Universe}
-		\frac
-			{}
-			{\Gamma \vdash U_i : U_{i+1} \leadsto \target{U_i}}
-	\end{equation} \hspace{0.5cm}
-	\begin{equation}
-		\tag{T-Pi}
-		\frac
-			{\Gamma \vdash A : U_i \leadsto \target{A} \qquad \Gamma, x : A \vdash B : U_j \leadsto \target{B}
-			}
-			{\Gamma \vdash \pitype{x}{A}{B} : U_{max(i, j)} \leadsto \targetpi{x}{A}{B}}
-	\end{equation} \hspace{0.5cm}
-	\begin{equation}
-		\tag{T-Apply}
-		\qquad\qquad\qquad\qquad
-		\frac
-			{\Gamma \vdash e_1 : \pitype{x}{A}{B} \leadsto \target{e_1} \qquad \Gamma \vdash e_2 : A \leadsto \target{e_2}}
-			{\Gamma \vdash e_1 \ e_2 : B\sub{e2}{x} \leadsto \targetapp{e_1}{e_2}}
-	\end{equation} \hspace{0.5cm}
-	\begin{equation}
-		\tag{T-Lambda}
-		\qquad\qquad\qquad\qquad\quad
-		\frac
-			{ \text{FV}(\lami{i}{x}{A}{e}) = \bar{x} : \bar{A} }
-			{ \Gamma \vdash \lami{i}{x}{A}{e} : \pitype{x}{A}{B} \leadsto \target{\flabel_i}\{\target{\bar{x}}\}}
-	\end{equation} \hspace{0.5cm}
-	\begin{equation}
-		\tag{T-Equv}
-		\frac
-			{\Gamma \vdash e : A \leadsto \target{e}}
-			{\Gamma \vdash e : B \leadsto \target{e}}
-	\end{equation}
-	\caption{Defunctionalization Transformation}
-    \label{fig:dcc transformation}
+A DCC context $\targetcon$ consists of a context $\target{\Gamma}$ for types and a context $\target{\fdef}$ for label definitions. The type context is a list of variable-expression pairs. The label context is a list of label names $\target{\flabel}$ and their associated data 
+$\textsf{(}\{\itemtype{\bar{x}}{\bar{A}}\}\textsf{,}\ \targetpi{x}{A}{B} \textsf{,}\ \target{e} \textsf{)}$. 
+The first part $\{\itemtype{\bar{x}}{\bar{A}}\}$ records the types of free variables the label takes. 
+The second part $\targetpi{x}{A}{B}$ specifies the type of the label, and the third part $\target{e}$ is what the label reduces to when it is applied to an argument.
+
+In other words, if $\target{\flabel}$ corresponds to a function $f$ in the source language, then $\{\itemtype{\bar{x}}{\bar{A}}\}$, $\targetpi{x}{A}{B}$, and $\target{e}$ correspond to the type of free variables in $f$, $f$'s type, and $f$'s body respectively.
+I use $\itemtype{\bar{x}}{\bar{A}}$ as a syntactic sugar of $\itemtype{x_1}{A_1}, \cdots, \itemtype{x_n}{A_n}$. 
+Note that $\target{A_{i+1}}$ could depend on $\target{x_1}, \cdots, \target{x_i}$, and the list of free variables can be empty. Variables $\target{\bar{x}}$ also appear freely in $\targetpi{x}{A}{B}$. 
+
+%Substitution
+Substitutions for variables, universes, $\Pi$-types and applications in DCC follow the conventional definition. Substitutions for labels are:
+\begin{equation*}
+\targetlab{\flabel}{\bar{e}}\targetsub{e}{x} = \target{\flabel}\{\target{\bar{e}}\targetsub{e}{x}\},
+\end{equation*}
+where $\target{\bar{e}}\targetsub{e}{x}$ is a syntactic sugar for $\target{e_1}\targetsub{e}{x}, \cdots, \target{e_n}\targetsub{e}{x}$.
+
+\begin{figure}[H]
+	\renewcommand{\arraystretch}{1.3}
+	\begin{tabular}{l r l l}
+		\textit{Universes}   & $\target{U} $       & ::= & $\target{U_i}$ \\
+		\textit{Expressions} & $\target{e}$\sfcomma $\target{A}$\sfcomma $\target{B}$  & ::= & 
+			$\target{x}$ $\ |\ $ $\target{U}$ $\ |\ $ $\targetpi{x}{A}{B}$ $\ |\ $ $\targetapp{e_1}{e_2}$ $\ |\ $ $\targetlab{\flabel}{\bar{e}}$\\
+		\textit{Type contexts} & $\target{\Gamma}$ & ::= & $\target{\cdot}$ $\ |\ $ $\target{\Gamma}$\sfcomma $\itemtype{x}{A}$ \\
+		\textit{Label contexts} & $\target{\fdef}$ & ::= & $\target{\cdot}$ $\ |\ $ 
+			$\target{\fdef}$\sfcomma $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$\\
+		\textit{DCC contexts} &$\targetcon$
+	\end{tabular}
+
+	\caption{DCC syntax}
+    \label{fig:dcc syntax}
 \end{figure}
 
+%Context operations
+I define the \textit{union} of contexts and the \textit{subset relation} between contexts, which are often used in definitions and proofs in the rest of the dissertation.
 
+\begin{definition} The union of two type contexts $\target{\Gamma_1} \cup \target{\Gamma_2}$ is $\target{\Gamma_1}$ appended with all the variable-expression pairs $\itemtype{x}{A}$ that only appear in $\target{\Gamma_2}$ in the order of their apperence.
+\begin{align*}
+	&\target{\Gamma_1}\ \cup\ \target{\cdot} = \target{\Gamma_1}\\
+	&\target{\Gamma_1}\ \cup\ (\target{\Gamma_2}\sfcomma \itemtype{x}{A}) = 
+	\begin{cases} 
+		\target{\Gamma_1}\ \cup\ \target{\Gamma_2} & \itemtype{x}{A} \in \target{\Gamma_1}\\
+		(\target{\Gamma_1}\ \cup\ \target{\Gamma_2}) \sfcomma \itemtype{x}{A} & \text{otherwise}.\\
+	\end{cases}
+\end{align*}
+\end{definition}
+
+\begin{definition} A type context $\target{\Gamma_1}$ is a subset of another context $\target{\Gamma_2}$ if every variable-expression pair $\itemtype{x}{A}$ in $\target{\Gamma_1}$ is also in $\target{\Gamma_2}$.
+\end{definition}
+
+Similar definitions apply to the union and the subset relation for CC-contexts and label contexts.
+
+\subsection{Type judgements}
+% An expression $\target{e}$ is well-typed in $\targetcon$ if $\targetcon \vdash \itemtype{e}{A}$ is derivable for some $\target{A}$.
+
+% Type judgement
+DCC's type judgements are of the form $\targetcon \vdash \itemtype{e}{A}$, and
+typing rules are given in Figure~\ref{fig:dcc typing}. Rules for variables, universes, $\Pi$-types, applications, and conversion are identical to their counterpart rules in CC, so I focus on the rule for labels. A label term $\targetlab{\flabel}{\bar{e}}$ is well-typed in $\targetcon$ if they satisfy the following conditions.
+\begin{enumerate}
+	\item The context $\targetcon$ is \textit{well-formed}.
+	\item Label $\target{\flabel}$ is present in $\target{\fdef}$ and it associates with 
+		$\textsf{(}\{\itemtype{\bar{x}}{\bar{A}}\}\textsf{,}\ \targetpi{x}{A}{B} \textsf{,}\ \target{e} \textsf{)}$.
+	\item The length of the two lists $\target{\bar{e}}$ and $\itemtype{\bar{x}}{\bar{A}}$ are equal. 
+	\item All expressions in $\target{\bar{e}}$ are well-typed, and their types match the specified types of free variables $\target{\bar{A}}$. 
+\end{enumerate}
+Specifically, condition (4) means:
+\begin{align*}
+	\targetcon &\vdash \itemtype{e_1}{A_1},\\
+	\targetcon &\vdash \itemtype{e_2}{A_2}\targetsub{e_1}{x_1},\\
+	&\cdots\\
+	\targetcon &\vdash \itemtype{e_n}{A_n}[\target{e_1} \slash \target{x_1}, \cdots, \target{e_{n-1}} \slash \target{x_{n-1}}].
+\end{align*}
+Each $\target{A_{i+1}}$ depends on $\target{x_1}, \cdots, \target{x_i}$, so $\target{e_1}, \cdots, \target{e_i}$ need to be substituted in $\target{A_{i+1}}$ in the type judgement for $\target{e_{i+1}}$. The type of $\targetcon \vdash \itemtype{e}{A}$ is
+\begin{equation*}
+\target{Pi}\textsf{(}\target{x}\textsf{,} \target{A} \targetsub{\bar{e}}{\bar{x}}\textsf{,} \target{B} \targetsub{\bar{e}}{\bar{x}}\textsf{)}.
+\end{equation*}
+Note that values of free variables $\target{\bar{e}}$ are substituted in $\targetpi{x}{A}{B}$, the specified type of the label. I use $\targetsub{\bar{e}}{\bar{x}}$ is a syntactic sugar of $[\target{e_1}\slash\target{x_1}\sfcomma \cdots\sfcomma \target{e_n}\slash\target{x_n}]$, and conditions (3) and (4) are abbreviated to $\targetcon \vdash \itemtype{\bar{e}}{\bar{A}}$ as a convention.
+
+% Well-formed context
+The DCC judgement for well-formed contexts is $\vdash \targetcon$ and the judgement for well-formed label contexts is $\vdash \target{\fdef}$. Their derivation rules are given in Figure~\ref{fig:dcc context}. A well-formed label context with an empty type context is a well-formed DCC context. 
+If $\targetcon$ is well-formed and $\target{A}$ is a valid type in it, then $\target{\fdef} \semicolon \target{\Gamma} \sfcomma \itemtype{x}{A}$ is also well-formed. 
+
+% Well-formed label context
+For label contexts, the empty context is well-formed. A label context extended with an entry $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$ is well-formed if $\targetpi{x}{A}{B}$ is a valid type in $\target{\fdef} \semicolon \target{\Gamma_{fv}}$ and the type of $\target{e}$ is $\target{B}$ in $\target{\fdef} \semicolon \target{\Gamma_{fv}} \sfcomma \itemtype{x}{A}$. Here, $\target{\Gamma_{fv}}$ is the \textit{free variable type context} formed by the label's free variables, defined as $\target{\Gamma_{fv}} = \target{\cdot} \sfcomma \itemtype{\bar{x}}{\bar{A}}$.
+
+\begin{figure}[H]
+\renewcommand{\arraystretch}{1.3}
+	\begin{equation}
+		\tag{Var}
+		\frac
+			{\itemtype{x}{A} \in \target{\Gamma} \qquad
+			 \vdash \target{\fdef}\semicolon \target{\Gamma} }
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{x}{A}}
+	\end{equation}
+
+	\begin{equation}
+		\tag{Universe}
+		\frac
+			{\vdash \target{\fdef}\semicolon \target{\Gamma} }
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{U_i}{U_{i+1}}}
+	\end{equation}
+
+	\begin{equation}
+		\tag{Pi}
+		\frac
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{A}{U_i} \qquad
+			 \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A} \vdash \itemtype{B}{U_j}
+			}
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U}_{\target{max}(\target{i},\ \target{j})} }
+	\end{equation}
+
+	\begin{equation}
+		\tag{Apply}
+		\frac
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \mathrel{:} \targetpi{x}{A}{B} \qquad
+			 \target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{e_2}{A} }
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \targetapp{e_1}{e_2} \mathrel{:} \target{B} \targetsub{e_2}{x}}
+	\end{equation}
+
+	\begin{equation}
+		\tag{Label}
+		\frac
+			{\begin{array}{l}
+			  	\vdash \target{\fdef}\semicolon \target{\Gamma} \qquad \target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{\bar{e}}{\bar{A}} \\
+			  	\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef} \\
+			 \end{array}	 
+			}
+			{\quad \target{\fdef}\semicolon \target{\Gamma} \vdash \targetlab{\flabel}{\bar{e}} \mathrel{:} 
+			 \target{Pi}\textsf{(}\target{x}\textsf{,} \target{A} \targetsub{\bar{e}}{\bar{x}}\textsf{,} \target{B} \targetsub{\bar{e}}{\bar{x}}\textsf{)} \quad
+			}
+	\end{equation}
+
+	\begin{equation}
+		\tag{Equiv}
+		\qquad\qquad
+		\frac
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{e}{A} \qquad
+			 \target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{B}{U} \qquad
+			 \target{\fdef}\semicolon \target{\Gamma} \vdash \target{A} \equiv \target{B}
+			}
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{e}{B}}
+	\end{equation}
+	\caption{DCC Typing}
+    \label{fig:dcc typing}
+\end{figure}
+
+\begin{figure}[H]
+\renewcommand{\arraystretch}{1.3}
+	\begin{equation}
+		\tag{WF-Empty}
+		\frac{\vdash \target{\fdef} }{\quad \vdash \target{\fdef} \semicolon \target{\cdot} \quad}
+	\end{equation}\vspace{0.1cm}
+
+	\begin{equation}
+		\tag{WF-Type}
+		\frac{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{A}{U}}
+		{\vdash \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A}}
+	\end{equation}
+
+	\begin{equation}
+		\tag{WFL-Empty}
+		\frac{}{\quad \vdash \target{\cdot} \quad}
+	\end{equation}
+	
+	\begin{multline}
+		\tag{WFL-Label}
+		\qquad\qquad\qquad
+		\frac{
+			\target{\fdef}\semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U} \qquad
+			\target{\fdef}\semicolon \target{\Gamma_{fv}}\sfcomma \itemtype{x}{A} \vdash \itemtype{e}{B}
+			}
+		{
+			\vdash \target{\fdef}\sfcomma \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}
+		}\\
+		\text{where } \target{\Gamma_{fv}} \triangleq \target{\cdot}\sfcomma \itemtype{\bar{x}}{\bar{A}}
+	\end{multline}
+	\caption{Well-formedness of DCC contexts and label contexts}
+    \label{fig:dcc context}
+\end{figure}
+
+\begin{figure}[H]
+\renewcommand{\arraystretch}{1.3}
+
+	\begin{align*}
+		\targetcon \vdash &\ \target{Apply\ } \target{\flabel}\{\target{\bar{e}}\}\ \target{e_2}\ \triangleright\  
+		\target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}] \\
+		& \text{where } \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e_1}} \in \target{\fdef}
+	\end{align*}
+
+	\begin{equation}
+		\tag{Eq-eq}
+		\frac
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \target{e} \qquad 
+			 \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_2} \triangleright^* \target{e}}
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}}
+	\end{equation}
+
+	\begin{equation}
+		\tag{Eta1}
+		\frac
+			{\begin{array}{l}
+			  \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \targetlab{\flabel}{\bar{e}} \qquad
+	          \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_2} \triangleright^* \target{e_2'} \\
+	          \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef} \\
+	          \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A} \targetsub{\bar{e}}{\bar{x}} \vdash 
+	          \target{e}\targetsub{\bar{e}}{\bar{x}} \equiv \targetapp{e_2'}{x}
+        	\end{array}}
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}}
+	\end{equation}
+
+	\begin{equation}
+		\tag{Eta2}
+		\frac
+			{\begin{array}{l}
+			  \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \target{e_1'} \qquad
+	          \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_2} \triangleright^* \targetlab{\flabel}{\bar{e}} \\
+	          \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef} \\
+	          \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A} \targetsub{\bar{e}}{\bar{x}} \vdash 
+	          \targetapp{e_1'}{x} \equiv \target{e}\targetsub{\bar{e}}{\bar{x}}
+        	\end{array}}
+			{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}}
+	\end{equation}
+
+	\caption{DCC reduction and equivalence}
+    \label{fig:dcc equivalence}
+\end{figure}
+
+% Reduction and equivalence
+DCC's reduction $\targetcon \vdash \target{e_1} \triangleright \target{e_2}$ and equivalence $\targetcon \vdash \target{e_1} \equiv \target{e_2}$ are defined in Figure~\ref{fig:dcc equivalence}. 
+There is only one reduction rule in DCC: $\target{Apply\ } \targetlab{\flabel}{\bar{e}}\ \target{e_2}$
+reduces to $\target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}]$, where $\target{e_1}$ is found in the label's associated data $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e_1}}$ in the label context $\target{\fdef}$. A reduction sequence is noted as $\target{e_1} \triangleright^* \target{e_2}$, which means $\target{e_1}$ reduces to $\target{e_2}$ in zero or more steps.
+
+Two terms $\target{e_1}$ and $\target{e_2}$ are equivalent if they both reduce to the same term $\target{e}$ in a reduction sequence or they are $\eta$-equivalent. DCC's $\eta$-equivalence rules are similar to that of CC. 
+Rule (Eta1) defines that $\target{e_1}$ and $\target{e_2}$ are equivalent if they satisfy the following conditions.
+\begin{enumerate}
+	\item  $\target{e_1}$ reduces to a label $\targetlab{\flabel}{\bar{e}}$ in a reduction sequence.
+	\item  $\target{e_2}$ reduces to some expression $\target{e_2'}$ in a reduction sequence.
+	\item  $\target{\flabel}$ associates with 
+	$\textsf{(}\{\itemtype{\bar{x}}{\bar{A}}\}\textsf{,}\ \targetpi{x}{A}{B} \textsf{,}\ \target{e} \textsf{)}$ 
+	in the label context $\target{\fdef}$.
+	\item  $\targetapp{e_2'}{x}$ is equivalent to $\target{e}\targetsub{\bar{e}}{\bar{x}}$ in $\targetcon\sfcomma\itemtype{x}{A}$.
+\end{enumerate}
+Rule (Eta1) and (Eta2) are symmetrical.
+
+
+% Informally, an expression $\target{e}$ is equivalent to a label $\targetdef{\flabel}{\bar{e}}$ if, for all expressions arg, Apply L{e-} arg \equiv Apply e arg.
+
+
+% \subsection{Properties}
+
+% \begin{lemma}[Type context weakening] If $\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{e}{A}$, $\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{B}{U}$, and $\itemtype{x}{B} \notin \target{\Gamma}$, then $\target{\fdef}\semicolon \target{\Gamma}, \itemtype{x}{B} \vdash \itemtype{e}{A}$.
+
+% \end{lemma}
+
+% \begin{lemma}[Function context weakening] If $\target{\fdef_1}\semicolon \target{\Gamma} \vdash \itemtype{e}{A}$ and $\vdash \target{\fdef_2} \semicolon \target{\Gamma}$, then $\target{\fdef_1} \cup \target{\fdef_2}\semicolon \target{\Gamma} \vdash \itemtype{e}{A}$.
+% \end{lemma}

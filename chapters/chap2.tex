@@ -1,52 +1,83 @@
 % !TEX root = ../main.tex
 
-<This version of CC is a minimalistic subset of Agda.>
-
-Section 2.1 gives a survey about defunctionalization transformation in non-dependently typed systems. Section 2.2 presents the definition of the Calculus of Constructions (CC), the source language for dependently typed defunctionalization.
+% <This version of CC is a minimalistic subset of Agda.>
+This chapter gives a survey about defunctionalization transformation in non-dependently typed systems (Section~\ref{sec: 2.1}) and presents the definition of the Calculus of Constructions (CC), the source language for dependently typed defunctionalization (Section~\ref{sec: 2.2}).
 
 \section{Defunctionalization}
+\label{sec: 2.1}
 
 Defunctionalization is a whole-program transformation that turns higher-order functional programs into first-order ones. This section explains type-preserving defunctionalization for simply-typed and polymorphic source programs with illustrating examples.
 
 \subsection{Simply-typed programs}
 
-Defunctionalization is based on the observation that a program has only finitely many function definitions. Therefore, if the whole program is available to the compiler, it can enumerate every function and replace them with distinct constructors of an \textit{algebraic data type (ADT)} in the target language. I refer to these constructors as \textit{labels}. Function applications are translated to calls to an auxiliary \textit{apply} function, which takes a label and the function argument, performs case analysis on the label, and returns the result of the corresponding function applied to the argument. In other words, let $\bbracket{-}$ denotes the transformation, we define $ \bbracket{e_1\ e_2} = apply\ \bbracket{e_1}\ \bbracket{e_2} $, which simulates the behavior of $e_1\ e_2$ in the source language.
+Defunctionalization is based on the observation that a program has only finitely many function definitions. Therefore, if the whole program is available, it can enumerate every function and replace them with distinct constructors of an \textit{algebraic data type (ADT)} in the target language. I refer to these constructors as \textit{labels}. Defunctionalization translates function applications to calls to an auxiliary \textit{apply} function, which takes a label and the function argument, performs case analysis on the label, and returns the result of the corresponding function applied to the argument. In other words, letting $\bbracket{-}$ denote the transformation, $ \bbracket{e_1\ e_2} = apply\ \bbracket{e_1}\ \bbracket{e_2} $, where $apply\ \bbracket{e_1}\ \bbracket{e_2}$ simulates the behavior of $e_1\ e_2$ in the source language.
 
-Suppose our source language and target language are the same OCaml-like functional programming language with ADTs. Example \ref{ex:simple dfc} shows how to defunctionalize a higher-order program.
-
+Suppose the source and the target language are both OCaml. Example \ref{ex:simple dfc} shows how to defunctionalize a simply typed higher-order program.
 \begin{exmp}
+\label{ex:simple dfc}
 Let the source program be:
-
 \begin{lstlisting}
-(* compose : (int -> bool) -> (int -> int) -> int -> bool *) 
-let compose g f x = g (f x) in
-    compose (fn x -> x > 0) (fn x : int -> x) 1 
+let rec map : (int -> int) -> int list -> int list =
+    fun f ls -> match ls with
+        | [] -> []
+        | hd :: tl -> (f hd) :: (map f tl)
+in
+    map (fun x -> x + 1) (map (fun x:int -> x) [1])
 \end{lstlisting}
-It contains two first-class anonymous functions. To defunctionalize it, we define a data type \texttt{Lam} with two constructors, one for each function:
+It contains two first-class anonymous functions. Defunctionalization involves defining a data type \texttt{lam} with two constructors, one for each function.
 \begin{lstlisting}
-(* ToBool represents (fn x -> x > 0) *)
-(* Id represents (fn x : int -> x) *)
-type Lam = ToBool | Id
+(* Incr represents (fun x -> x + 1) *)
+(* Id represents (fun x:int -> x) *)
+type lam = Incr | Id
 \end{lstlisting}
-We also need to define the auxiliary function \textit{apply}: \texttt{apply f arg} returns the result of
-applying the source-program function which \texttt{f} represents to the argument \texttt{arg}. If \texttt{f} is \texttt{ToBool}, it returns \texttt{arg > 0}, and similarly for case \texttt{Id}.
+The next step is defining the auxiliary function \textit{apply}: \texttt{apply f arg} returns the result of
+applying the source-program function which \texttt{f} represents to the argument \texttt{arg}. If \texttt{f} is \texttt{Incr}, it returns \texttt{arg + 1}, and similarly for case \texttt{Id}.
 \begin{lstlisting}
-let apply f arg = match f with
-	| ToBool -> arg > 0
-	| Id -> arg
+let apply : lam -> int -> int = 
+    fun f arg -> match f with
+        | Incr -> arg + 1
+        | Id -> arg 
 \end{lstlisting}
 Now, the defunctionalized target program can be obtained by replacing all the first-class functions with their corresponding labels and all the function applications with calls to \texttt{apply}.
 \begin{lstlisting}
-let compose' g f x = apply g (apply f x) in
-    compose' ToBool Id 1
+let rec map' : lam -> int list -> int list =
+    fun f ls -> match ls with
+        | [] -> []
+        | hd :: tl -> (apply f hd) :: (map' f tl)
+in
+    map' Incr (map' Id [1])
 \end{lstlisting}
-Note that \texttt{compose'} now takes first-order values of type \texttt{Lam} instead of functions.
-\label{ex:simple dfc}
+Note that \texttt{map'} now takes first-order values of type \texttt{Lam} instead of functions.
 \end{exmp}
 
 \subsubsection{Type preservation}
+Informally speaking, a type-preserving transformation turns a well-typed source program to a well-typed target program.
+In Example~\ref{ex:simple dfc}, all first-class functions have the same type. Example~\ref{ex:illtype dfc} shows that defunctionalization produces ill-typed programs when first-class functions are not all in the same type.
 
-Informally speaking, a type-preserving transformation turns a well-typed source program to a well-typed target program. The formal definition can be found in (some later section in Chapter 4). The reader might notice that, in Example \ref{ex:simple dfc}, the \texttt{apply} function is ill-typed. It returns a \texttt{bool} in case \texttt{ToBool} and returns an \texttt{int} in case \texttt{Id}. With a minor adjustment, we can make the transformation type-preserving:
+\begin{exmp}
+\label{ex:illtype dfc}
+Let the source program be:
+\begin{lstlisting}
+let compose : (int -> bool) -> (int -> int) -> int -> bool =
+    fun g f x -> g (f x)
+in 
+    compose (fun x -> x > 0) (fun x:int -> x) 1
+\end{lstlisting}
+Data type \texttt{lam} and the \texttt{apply} function are defined similarly as in Example~\ref{ex:simple dfc}.
+\begin{lstlisting}
+(* ToBool represents (fun x -> x > 0) *)
+(* Id represents (fun x : int -> x) *)
+type lam = ToBool | Id
+
+let apply f arg = match f with
+    | ToBool -> arg > 0
+    | Id -> arg
+\end{lstlisting}
+Function \texttt{apply} is ill-typed -- it returns a \texttt{bool} in case \texttt{ToBool} and returns an \texttt{int} in case \texttt{Id}.
+\end{exmp}
+
+A minor adjustment can fix this problem: defining two \texttt{apply} functions, one for functions of type \texttt{int -> bool}, another one for functions of type \texttt{int -> int}.
+
 \begin{lstlisting}
 (* apply_int_bool : Lam -> int -> bool *)
 let apply_int_bool f arg = match f with
@@ -61,92 +92,113 @@ let compose' g f x = apply_int_bool g (apply_int_int f x) in
     compose' ToBool Id 1
 \end{lstlisting}
 
-Two \texttt{apply} functions are defined – one for functions of type \texttt{int -> bool}, another one for functions of type \texttt{int -> int}. In general, we need to define a family of monomorphic \texttt{apply} functions, i.e. one specialized function \texttt{apply\_a\_b} for each function type \texttt{a -> b} in the source program.
+In general, simply typed defunctionalization need to define a family of monomorphic \texttt{apply} functions (i.e.~one specialized function \texttt{apply\_a\_b} for each function type \texttt{a -> b} in the source program) to achieve type preservation.
 
 \subsection{Polymorphic programs}
 
-In languages with polymorphism, defunctionalization can be done similarly as in simply-typed scenarios – first-class functions are replaced by labels, and applications are translated to calls to the \textit{apply} function. The difference is that we only need one polymorphic \textit{apply}, and function labels are defined as constructors of a  \textit{generalized algebraic data type (GADT)}. GADTs allow data types to take type parameters, and constructors may return specific instantiations of the parameters. Suppose our target language now supports GADTs, Example \ref{ex: poly dfc} shows how to defunctionalize a polymorphic higher-order program.
+In languages with polymorphism and \textit{generalized algebraic data types (GADTs)}, defunctionalization can be done similarly as in simply-typed scenarios – first-class functions are replaced by labels, and applications are translated to calls to the \textit{apply} function. The difference is that we only need one polymorphic \textit{apply}, and function labels are defined as constructors of a GADT. GADTs allow data types to take type parameters, and constructors may return specific instantiations of the parameters. Suppose our target language now supports GADTs, Example \ref{ex: poly dfc} shows how to defunctionalize a polymorphic higher-order program.
 
-\begin{exmp} Consider the polymorphic composition function:
+\begin{exmp}
+\label{ex: poly dfc}
+Consider the polymorphic composition function:
 \begin{lstlisting}
-(* compose : type a b c. (b -> c) -> (a -> b) -> a -> c *)
-let compose g f x = g (f x) in
-    compose (fn x -> x > 0) (fn x -> x) 1
+let compose : type a b c. (b -> c) -> (a -> b) -> a -> c =
+    fun g f x -> g (f x) 
+in
+    compose (fun x -> x > 0) (fun x -> x) 1
 \end{lstlisting}
-\texttt{(fn x -> x)} is the polymorphic identity function. \texttt{Lam} takes two type parameters, and a function of type \texttt{a -> b} in the source program translates to a label of type \texttt{Lam a b}. Note that the constructor \texttt{ToBool}, which corresponds to a non-polymorphic function, has instantiated parameters. 
+\texttt{(fun x -> x)} is the polymorphic identity function. The type \texttt{lam} takes two type parameters, and a function of type \texttt{a -> b} in the source program translates to a label of type \texttt{(a, b) lam}. Note that the constructor \texttt{ToBool}, which corresponds to a non-polymorphic function, has instantiated parameters. 
 \begin{lstlisting}
-type Lam 'a 'b = 
-	  ToBool : Lam int bool
-	| Id : Lam 'a 'a
+type ('a, 'b) lam = 
+      ToBool : (int, bool) lam
+    | Id : ('a, 'a) lam
 
-(* apply : type a b. Lam a b -> a -> b *)
-let apply f arg = match f with
-	| ToBool -> arg > 0
-	| Id -> arg
+let apply : type a b. (a, b) lam -> a -> b =
+    fun f arg -> match f with
+        | ToBool -> arg > 0
+        | Id -> arg
 \end{lstlisting}
 Again, the target program is obtained by replacing first-class functions with their corresponding labels and function applications with calls to \texttt{apply}, and the result is well-typed.
 \begin{lstlisting}
-(* compose' : type a b c. Lam b c -> Lam a b -> a -> c *)
-let compose' g f x = apply g (apply f x) in
-    compose ToBool Id 1
+let compose' : type a b c. 
+                 (b, c) lam -> (a, b) lam -> a -> c =
+    fun g f x -> apply g (apply f x)
+in 
+    compose' ToBool Id 1
 \end{lstlisting}
-	\label{ex: poly dfc}
+	
 \end{exmp}
 
-\subsubsection{Defunctionalize all functions}
-Defunctionalization was initially presented as a programming technique for eliminating functions with functional arguments \cite{reynolds1972definitional}. The concept and technique generalize to eliminating all functions in the source program \cite{chin1996higher}. In general, the label of a function \texttt{f:a -> b} with free variables \texttt{x1:t1, ..., xn:tn} has the form:
+\subsubsection{Functions returning functions}
+Defunctionalization was initially presented as a programming technique for eliminating functions with functional arguments~\cite{DBLP:conf/acm/Reynolds72}. The concept and technique generalize to eliminating functions that return functions, for example, the curried version of integer addition, whose type is \texttt{int -> (int -> int)}. The returned functions may contain free variables, and defunctionalization translates free variables to arguments to their corresponding function labels. In general, the label of a function \texttt{f:a -> b} with free variables \texttt{x1:t1, ..., xn:tn} has the form:
 \begin{lstlisting}
-Fun : t1 -> ... -> tn -> Lam a b
+Fun : t1 -> ... -> tn -> (a, b) lam
 \end{lstlisting}
-Arguments to the label form an \textit{environment} that maps free variables to values. A label with fully-applied arguments is similar to a \textit{closure}, except that a closure stores the function definition together with the environment, whereas defunctionalization keeps the function definition separately in \textit{apply}. Example \ref{ex: full dfc} shows a case of defunctionalizing functions with free variables.
+Arguments to the label form an \textit{environment} that stores values of free variables. A label with fully-applied arguments is similar to a \textit{closure}, except that a closure stores the function pointer together with the environment, whereas defunctionalization keeps the function definition separately in \textit{apply}. Example \ref{ex: full dfc} shows the defunctionalization of the curried integer addition.
 
-\begin{exmp} Let the source program be the curried version of integer addition:
-
+\begin{exmp}
+\label{ex: full dfc}
+The source program is the curried integer addition.
 \begin{lstlisting}
-(* plus : int -> (int -> int) *)
-let plus = (fun x -> (fun y -> x + y)) in
+let plus : int -> (int -> int) = 
+    fun x -> (fun y -> x + y)
+in
     plus 1 2
 \end{lstlisting}
-There are two function definitions in the code above. Applying the polymorphic defunctionalization technique, we define \texttt{Lam} and \texttt{apply} as:
+There are two function definitions in the code above. Applying the polymorphic defunctionalization technique, \texttt{lam} and \texttt{apply} are defined as follows.
 \begin{lstlisting}
-type Lam 'a 'b = 
-	  Plus : Lam int (Lam int int)
-	| Plus_x : int -> Lam int int
+type ('a, 'b) lam = 
+      Plus : (int, (int, int) lam) lam
+    | Plus_x : int -> (int, int) lam
 
-let apply f arg = match f with
-	| Plus -> Plus_x arg
-	| (Plus_x x) -> x + arg
+let apply : type a b. (a, b) lam -> a -> b =
+    fun f arg -> match f with
+        | Plus -> Plus_x arg
+        | (Plus_x x) -> x + arg
+\end{lstlisting}
+There is a free variable \texttt{x} of type \texttt{int} in \texttt{(fun y -> x + y)}, so the corresponding constructor \texttt{Plus\_x} takes an argument of type \texttt{int}.
+
+The target program is obtained in a similar way as in previous examples.
+\begin{lstlisting}
+let plus' : (int, (int, int) lam) lam = Plus
+in apply (apply plus' 1) 2
 \end{lstlisting}
 
-There is a free variable \texttt{x:int} in \texttt{(fun y -> x + y)}, so, the corresponding constructor \texttt{Plus\_x} takes an argument of type \texttt{int}.
-
-Finally, the target program:
-\begin{lstlisting}
-let plus' = Plus in
-	apply (apply plus' 1) 2
-\end{lstlisting}
-	\label{ex: full dfc}
 \end{exmp}
 
 \subsection{Related work in defunctionalization}
 
-Defunctionalization was first presented in its untyped form by Reynolds in the 1970s as a programming technique to translate a higher-order interpreter to a first-order one \cite{reynolds1972definitional}. It was later used as an implementation technique in various scenarios, from ML compilers \cite{chin1996higher,cejtin2000flow} to type-safe garbage collectors \cite{wang2001type}. The method of using a family of monomorphic \textit{apply} functions to achieve type preservation is the standard workaround in simply-typed scenarios, which can be found in \cite{bell1997type,tolmach1998ml,cejtin2000flow,nielsen2000denotational}. Danvy and Nielsen’s survey contains more examples of defunctionalization in practice \cite{danvy2001defunctionalization}.
+Defunctionalization was first presented in its untyped form by Reynolds in the 1970s as a programming technique to translate a higher-order interpreter to a first-order one~\cite{DBLP:conf/acm/Reynolds72}. It was later used as an implementation technique in various scenarios, from ML compilers~\cite{DBLP:journals/lisp/ChinD96,DBLP:conf/esop/CejtinJW00} to type-safe garbage collectors~\cite{DBLP:conf/popl/WangA01}. The method of using a family of monomorphic \textit{apply} functions to achieve type preservation is the standard workaround in simply-typed scenarios, which can be found in the literature~\cite{DBLP:conf/icfp/BellBH97,DBLP:journals/jfp/TolmachO98,DBLP:conf/esop/CejtinJW00,nielsen2000denotational}. Danvy and Nielsen’s survey contains more examples of defunctionalization in practice~\cite{danvy2001defunctionalization}.
 
 % Mention something about Lightweight higher-kinded polymorphism? It's an application of polymorphic DFC.
 
-Formalization of defunctionalization focused on proving type preservation and correctness of the transformation. Bell et al. proved that the transformation for simply typed programs is type preserving \cite{bell1997type}.  Nielsen gave a proof for its partial correctness in denotational semantics \cite{nielsen2000denotational}, and Banerjee et al. provided a proof for total correctness in operational semantics \cite{banerjee2001design}. Pottier and Gauthier formalized type-preserving polymorphic defunctionalization in System F extended with GADTs \cite{pottier2004polymorphic}.
+Formalization of defunctionalization focused on proving type preservation and correctness of the transformation. Bell et al.~proved that the transformation for simply typed programs is type preserving~\cite{DBLP:conf/icfp/BellBH97}.  Nielsen gave a proof for its partial correctness in denotational semantics~\cite{nielsen2000denotational}, and Banerjee et al.~provided a proof for total correctness in operational semantics~\cite{DBLP:conf/tacs/BanerjeeHR01}. Pottier and Gauthier formalized type-preserving polymorphic defunctionalization in System F extended with GADTs~\cite{DBLP:conf/popl/PottierG04}.
 
 \section{Source language: the Calculus of\\ Constructions (CC)}
+\label{sec: 2.2}
 
-The source language is a variant of Coquand’s Calculus of Constructions \cite{coquand1986calculus}, and its syntax is presented in Figure \ref{fig:cc syntax}. \textit{Universes}, also known as \textit{kinds} or \textit{sorts}, are essentially the types of types. CC uses an infinite hierarchy of predicative universes $U_i$, where $i$ ranges over natural numbers. Term expressions of CC include: variables (from an infinite set of variable names), universes, dependent function types (or $\Pi$-types), applications, and functions. A context is a list of variable-expression pairs.
+The source language which I will use to define dependently typed defunctionalization is a variant of Coquand’s Calculus of Constructions~\cite{DBLP:journals/iandc/CoquandH88}. To be precise, it is a subset of Luo's Extended Calculus of Constructions~\cite{DBLP:phd/ethos/Luo90}, which combines Coquand's original Calculus of Constructions (with only one impredicative universe) with a Martin-Löf style universe hierarchy. 
 
-CC rules for typing (Fig \ref{fig:cc typing}) and well-formedness of contexts (Fig \ref{fig:cc context}) are mutual-inductively defined. The type of a universe $U_i$ is $U_{i+1}$, and the type of $\pitype{x}{A}{B}$ is the highest universe among universes of $A$ and $B$. Functions have types $\pitype{x}{A}{B}$, and applications have types $B[e_2\slash x]$, since the output of a function type may depend on the input value. A context is well-formed if every variable is associated with a valid type, that is, the associated expression’s type is a universe. 
+\textit{Universes}, also known as \textit{kinds} or \textit{sorts}, are essentially the types of types. CC uses an infinite hierarchy of predicative universes $U_i$, where $i$ ranges over natural numbers, and the type of universe $U_i$ is $U_{i+1}$. Therefore, universes form an infinite hierarchy:
+\begin{equation*}
+U_0 : U_1 : U_2 : \cdots
+\end{equation*}
+CC's syntax is presented in Figure~\ref{fig:cc syntax}. Term expressions of CC are: variables (from an infinite set of variable names), universes, dependent function types (or $\Pi$-types), applications, and functions. A context is a list of variable-expression pairs.
 
-As a convention, $\Gamma \vdash A : U$ means that $\Gamma \vdash A : U_i$ for some $i$, and $A \rightarrow B$ stands for the $\Pi$-type $\pitype{x}{A}{B}$ where $B$ does not depend on $x$. Base types are omitted for simplicity, but some base types like the unit type and the natural numbers will be used freely in examples.
+CC's typing judgements are of the form
+\begin{equation*}
+	\Gamma \vdash e : A
+\end{equation*}
+where $\Gamma$ is a context and $e, A$ are terms. A context is \textit{well-formed} if every variable in it is associated with a valid type, that is, the associated expression’s type is a universe. The judgement for the well-formedness of contexts is $\vdash \Gamma$. 
+
+CC's rules for typing (Fig \ref{fig:cc typing}) and well-formedness of contexts (Fig \ref{fig:cc context}) are mutual-inductively defined. The type of a universe $U_i$ is $U_{i+1}$, and the type of $\pitype{x}{A}{B}$ is the highest universe among universes of $A$ and $B$. Functions have types $\pitype{x}{A}{B}$, and applications have types $B[e_2\slash x]$, since the output of a function type may depend on the input value.  
+
+As a convention, $\Gamma \vdash A : U$ means that $\Gamma \vdash A : U_i$ for some $i$, and $A \rightarrow B$ stands for the $\Pi$-type $\pitype{x}{A}{B}$ where $B$ does not depend on $x$. Base types are omitted for simplicity, but I will use base types like the unit type and the natural numbers freely in examples.
 
 Figure \ref{fig:cc equivalence} defines reduction and equivalence in CC. The only reduction is the $\beta$-reduction, and $e_1 \triangleright^* e_2$ means that $e_1$ reduces to $e_2$ in zero or more steps. Two terms are equivalent if they reduce to the same term or are $\eta$-equivalent. If an expression $e$ has type $A$ and $A \equiv B$ (under context $\Gamma$), then $e$ also has type $B$. The reduction rule can be thought of the operational semantics of CC.
 
 \begin{figure}
+
 	\renewcommand{\arraystretch}{1.3}
 	\begin{tabular}{l r l l}
 		\textit{Universes}   & $U$       & ::= & ${U_i}$ \\
@@ -154,9 +206,8 @@ Figure \ref{fig:cc equivalence} defines reduction and equivalence in CC. The onl
 			${x}$ $\ |\ $ ${U}$ $\ |\ $ $\pitype{x}{A}{B}$ $\ |\ $ ${e_1}\ {e_2}$ $\ |\ $ $\lam{x}{A}{e}$\\
 		\textit{Context} & ${\Gamma}$ & ::= & ${\cdot}$ $\ |\ $ ${\Gamma}$, ${x} : {A}$ \\
 	\end{tabular}
-
 	\caption{CC Syntax}
-    \label{fig:cc syntax}
+	\label{fig:cc syntax}	
 \end{figure}
 
 \begin{figure}
@@ -192,13 +243,13 @@ Figure \ref{fig:cc equivalence} defines reduction and equivalence in CC. The onl
 			{ \Gamma \vdash \lam{x}{A}{e} : \pitype{x}{A}{B}}
 	\end{equation} \hspace{0.5cm}
 	\begin{equation}
-		\tag{Equv}
+		\tag{Equiv}
 		\frac
 			{\Gamma \vdash e : A \qquad \Gamma \vdash B : U \qquad \Gamma \vdash A \equiv B}
 			{\Gamma \vdash e : B}
 	\end{equation}
 	\caption{CC Typing}
-    \label{fig:cc typing}
+	\label{fig:cc typing}
 \end{figure}
 
 \begin{figure}
@@ -253,7 +304,7 @@ Figure \ref{fig:cc equivalence} defines reduction and equivalence in CC. The onl
 
 CC has a useful property: if $\Gamma \vdash e : A$, then $\Gamma \vdash A : U$. Precisely, in the derivation tree of $\Gamma \vdash e : A$, there must be a sub-derivation tree of $\Gamma \vdash A : U$.
 
-As standard results from the literature \cite{coquand1986calculus,luo1990extended}, CC is type safe, strongly normalizing (every well-typed program terminates), and consistent. Type-checking and type inference in CC are decidable. Despite having a minimalistic syntax, CC can express many useful functions, for example, the polymorphic identity function and the fully dependent composition function.
+As standard results from the literature~\cite{DBLP:journals/iandc/CoquandH88,DBLP:phd/ethos/Luo90}, CC is type safe, strongly normalizing (every well-typed program terminates), and consistent. Type-checking and type inference in CC are decidable. Despite having a minimalistic syntax, CC can express many useful functions, for example, the polymorphic identity function and the fully dependent composition function.
 
 \begin{exmp}[Polymorphic identity]
 In System F, the polymorphic identity function has type $\forall a.\ a \rightarrow a$. In CC, we can define a  dependent function that takes a type $A$ and returns the identity function of type $A \rightarrow A$.

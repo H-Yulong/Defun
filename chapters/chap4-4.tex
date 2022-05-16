@@ -1,0 +1,133 @@
+% !TEX root = ../main.tex
+
+\section{Type preservation}
+
+This section proves that the dependently typed defunctionalization is type-preserving and correct. The proof of type-preservation requires three lemmas: \textit{substitution}, \textit{preservation of reduction sequences}, and \textit{coherence}. The proof of correctness follows directly from the preservation of reduction sequences. Unless explicitly noted, I use $\target{e}$ to stand for $\bbracket{e}$ in this section.
+
+\subsection{Substitution, reduction and coherence}
+
+I start with the proof of the substitution lemma. It states that the transformation is compatible with substitutions, i.e.~$\bbracket{e_1 \sub{e_2}{x}} \equiv \target{e_1} \sub{\target{e_2}}{\target{x}}$. This equivalence is only valid in a \textit{suitable context} $\targetcon$ where $\target{\fdef}$ contains all the function definitions appeared in $e_1$, $e_2$, and $e_1\sub{e_2}{x}$. Having a suitable context is necessary for establishing the  $\eta$-equivalence between two labels -- they cannot be equivalent if one of them cannot be found in the label context!
+
+Generally, I define the suitable contexts for a theorem (or lemma) as the DCC contexts containing all the function definitions in all expressions mentioned in the theorem. The other two lemmas have their version of suitable contexts, and I omit their explicit definitions for simplicity.
+
+\begin{lemma}[Substitution] For all well-typed substitutions $e_1 \sub{e_2}{x}$,\\
+$\bbracket{e_1 \sub{e_2}{x}} \equiv \target{e_1}\sub{\target{e_2}}{\target{x}}$ under a suitable context for the substitution.
+
+\label{lem:sub}
+\end{lemma}
+\paragraph{Proof.} I proof by induction on the syntax structure of $e_1$, and the induction hypothesis (IH) is $\bbracket{e_1 \sub{e_2}{x}} \equiv \target{e_1}\sub{\target{e_2}}{\target{x}}$. The most difficult case is when $e_1 = (\lami{i}{x}{A}{e})$, since the result of $e_1 \sub{e_2}{x}$ is a new function and the proof involves showing the $\eta$-equivalence of two labels.
+\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{p{0.05\linewidth} p{0.95\linewidth}}
+Case & $e_1 = y$: \\
+& If $x = y$, then $\bbracket{x \sub{e_2}{x}} = \target{e_2} = \target{x}\sub{\target{e_2}}{\target{x}}$.\\
+& If $x \neq y$, then $\bbracket{y \sub{e_2}{x}} = \target{y} = \target{y}\sub{\target{e_2}}{\target{x}}$. \\
+\\
+
+Case & $e_1 = U_i$:\\
+& Trivial.\\
+\\
+
+Case & $e_1 = \pitype{y}{A}{B}$:\\
+& $\bbracket{(\pitype{y}{A}{B})\sub{e_2}{x}} = \bbracket{\pitype{y}{A\sub{e_2}{x}}{B\sub{e_2}{x}}}$ by def.\\ 
+& $\phantom{\bbracket{(\pitype{y}{A}{B})\sub{e_2}{x}}} = \target{Pi} \sfpl \target{y} \sfcomma \bbracket{A\sub{e_2}{x}} \sfcomma \bbracket{B\sub{e_2}{x}} \sfpr $ by def.\\
+& $\phantom{\bbracket{(\pitype{y}{A}{B})\sub{e_2}{x}}} \equiv \target{Pi} \sfpl \target{y} \sfcomma \target{A}\sub{\target{e_2}}{\target{x}} \sfcomma \target{B}\sub{\target{e_2}}{\target{x}} \sfpr  $ by IH.\\
+& $\phantom{\bbracket{(\pitype{y}{A}{B})\sub{e_2}{x}}} = \sfpl\target{Pi} \sfpl \target{y} \sfcomma \target{A} \sfcomma \target{B} \sfpr \sfpr \sub{\target{e_2}}{\target{x}} $ by def.\\
+
+Case & $e_1 = e\ e'$:\\
+& Similar to the previous case.\\
+\\
+
+Case & $e_1 = (\lami{i}{y}{A}{e})$:\\
+& Without loss of generality, I assume that the type of $e_1$ is $\pitype{y}{A}{B}$, the type of $e_2$ is $C$, and FV($e_1$) $ =y_1 : A_1,\ \cdots,\ y_m : A_m,\ x : C,\ z_1 : B_1,\ \cdots,\ z_n : B_n$.
+I abbreviate the free variables to $\bar{y} : \bar{A}, x : C , \bar{z} : \bar{B}$. Note that $x$ is free in $\bar{B}, A, B, \text{and } e$.
+\\
+& By definition, I have $\bbracket{(\lami{i}{y}{A}{e})\sub{e_2}{x}} = \bbracket{(\lami{j}{y}{A\sub{e_2}{x}}{e\sub{e_2}{x}})}$, where $j$  is a fresh tag.\\
+& By term transformation, $\bbracket{(\lami{i}{y}{A}{e})} = 
+\target{\flabel_i}\{\target{\bar{y}} \sfcomma \target{x} \sfcomma \target{\bar{z}}\}$, and I have 
+$\itemdef{\target{\flabel_i}}
+{\itemtype{\bar{y}}{\bar{A}} \sfcomma \itemtype{x}{C} \sfcomma \itemtype{\bar{z}}{\bar{B}}}
+{\targetpi{y}{A}{B}}{\target{e}} \in \target{\fdef}$ by assumption (since $\bbracket{(\lami{i}{x}{A}{e})}_d \in \target{\fdef}$).\\
+& Similatly, $\bbracket{(\lami{j}{y}{A\sub{e_2}{x}}{e\sub{e_2}{x}})} = 
+\target{\flabel_j}\{\target{\bar{y}} \sfcomma \target{\bar{z}}\}$, and\\ 
+&  $\itemdef{\target{\flabel_j}}
+{\itemtype{\bar{y}}{\bar{A}} \sfcomma \target{\bar{z}} \goodcolon \bbracket{\bar{B}\sub{e_2}{x}}}
+{\target{Pi} \sfpl \target{y} \sfcomma \bbracket{{A}\sub{e_2}{x}} \sfcomma \bbracket{{B}\sub{e_2}{x}} \sfpr}
+{\bbracket{{e}\sub{e_2}{x}}} \in \target{\fdef}$.\\
+& Now, my goal is to show that 
+$\sfpl \target{\flabel_i}\{\target{\bar{y}} \sfcomma \target{x} \sfcomma \target{\bar{z}}\} \sfpr \sub{\target{e_2}}{\target{x}} = \target{\flabel_i}\{\target{\bar{y}} \sfcomma \target{e_2} \sfcomma \target{\bar{z}}\} \equiv
+\target{\flabel_j}\{\target{\bar{y}} \sfcomma \target{\bar{z}}\}$. By rule (Eta1), it is sufficient to show that\\
+& $\targetcon \sfcomma \target{y} \goodcolon \target{A} \vdash 
+\target{e}[\target{\bar{y}}\slash\target{\bar{y}} \sfcomma \target{e_2}\slash\target{x} \sfcomma \target{\bar{z}}\slash\target{\bar{z}}]
+\equiv \target{Apply}\ \target{\flabel_j}\{\target{\bar{y}} \sfcomma \target{\bar{z}}\} \ \target{y}$.\\
+& Indeed, $\target{e}[\target{\bar{y}}\slash\target{\bar{y}} \sfcomma \target{e_2}\slash\target{x} \sfcomma \target{\bar{z}}\slash\target{\bar{z}}] = \target{e}\sub{\target{e_2}}{\target{x}}$, and\\
+& $\target{Apply}\ \target{\flabel_j}\{\target{\bar{y}} \sfcomma \target{\bar{z}}\} \ \target{y}\ 
+\triangleright\  \bbracket{{e}\sub{e_2}{x}}[\target{\bar{y}}\slash\target{\bar{y}} \sfcomma \target{\bar{z}}\slash\target{\bar{z}}] = \bbracket{{e}\sub{e_2}{x}} \equiv \target{{e}\sub{\target{e_2}}{\target{x}}}. \qed
+$
+\end{longtable}
+
+The next two lemmas shows that the transformation is also compatible with reductions. Preservation of small step reduction shows that if a well-typed term $e_1$ reduces to $e_2$ in one step, then $\target{e_1}$ reduces to a term $\target{e}$ that is equivalent to $\target{e_2}$ in a reduction sequence.
+
+\begin{lemma}[Preservation of small step reduction] For all well-typed terms $e_1$, if $e_1\ \triangleright\ e_2$, then $\target{e_1} \triangleright^* \target{e}$ for some $\target{e}$ that is equivalent to $\target{e_2}$ in a suitable context for the reduction.
+\paragraph{Proof.} By induction on CC's only reduction rule: $(\lami{i}{x}{A}{e_1})\ e_2\ \triangleright\ e_1\sub{e_2}{x}$. My goal is to show that $\bbracket{(\lami{i}{x}{A}{e_1})\ e_2}\ \triangleright^*\ \target{e}$ for some $\target{e}$ that is equivalent to $\bbracket{e_1\sub{e_2}{x}}$.
+
+Suppose the type of $(\lami{i}{x}{A}{e_1})$ is $\pitype{x}{A}{B}$. By term transformation, $\bbracket{(\lami{i}{x}{A}{e_1})} = \targetlab{\flabel_i}{\bar{x}}$, where $\target{\bar{x}}$ correspond to free variables $\bar{x}$ in $\lambda^i$. By assumption, $\itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e_1}} \in \target{\fdef}$. So,
+\begin{align*}
+\bbracket{(\lami{i}{x}{A}{e_1})\ e_2} &= \target{Apply}\ \targetlab{\flabel_i}{\bar{x}}\ \target{e_2}\\
+&\ \triangleright \target{e_1}[\target{\bar{x}}\slash\target{\bar{x}} \sfcomma \target{e_2}\slash\target{x}]\\
+&= \target{e_1}\sub{\target{e_2}}{\target{x}}\\
+&\equiv \bbracket{e_1\sub{e_2}{x}} \text{ by Lemma \ref{lem:sub}.} \qed
+\end{align*}
+\label{lem:small reduction}
+\end{lemma}
+
+The preservation of reduction sequences follows directly from Lemma~\ref{lem:small reduction}. 
+
+\begin{lemma}[Preservation of reduction sequences] For all well-typed terms $e_1$, if $e_1\ \triangleright^* e_2$, then $\target{e_1} \triangleright^* \target{e}$ for some $\target{e}$ that is equivalent to $\target{e_2}$ in a suitable context for the reduction sequence.
+\label{lem:reduction sequence}
+\end{lemma}
+
+\begin{coro}[Correctness] For all closed programs $\cdot \vdash e \goodcolon A$, if $A$ is a ground type and $e\ \triangleright^* v$ for some value $v$, then $\target{e}\ \triangleright^* \target{v}$ in $\bbracket{e}_d \semicolon \target{\cdot}$ .
+\end{coro}
+
+Correctness of the transformation is a special case of Lemma~\ref{lem:reduction sequence}.
+Note that $\bbracket{A}_d \subseteq \bbracket{e}_d$ by Lemma~\ref{lem:subset} and ground type values do not contain function definitions, so $\bbracket{e}_d$ is a suitable context for applying the lemma.
+
+Finally, I show that the transformation is compatible with the equivalence relation.
+
+\begin{lemma}[Coherence] If $e_1 \equiv e_2$, then $\target{e_1} \equiv \target{e_2}$ in a suitable context for the equivalence.
+\paragraph{Proof.} I prove by induction on CC's equivalence rules.
+\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{p{0.05\linewidth} p{0.95\linewidth}}
+Case & (Eq-eq): \\
+& If $e_1 \equiv e_2$ by (Eq-eq) in CC, then $e_1\ \triangleright^* e$ and $e_2\ \triangleright^* e$ for some $e$. By preservation of reduction sequences, I have $\target{e_1}\ \triangleright^* \target{e_1'}$ where $\target{e_1'} \equiv \target{e}$ and $\target{e_2}\ \triangleright^* \target{e_2'}$ where $\target{e_2'} \equiv \target{e}$. 
+Therefore, $\target{e_1} \equiv \target{e_1'}$ and $\target{e_2} \equiv \target{e_2'}$ by DCC's equivalence rule (Eq-eq), and $\target{e_1} \equiv \target{e_2}$ by the transitivity and the symmetry of the equivalence relation.
+\\
+
+Case & (Eq-Eta1):\\
+& If $e_1 \equiv e_2$ by (Eq-Eta1) in CC, then $e_1\ \triangleright^* (\lami{i}{x}{A}{e})$, $e_2\ \triangleright^* e_2'$, and $e \equiv e_2'\ x$ (assuming that the type of $e_1$ is $\pitype{x}{A}{B}$). By preservation of reduction sequences, I have $\target{e_2}\ \triangleright^* \target{e_2''}$ where $\target{e_2''} \equiv \target{e_2'}$. By DCC's equivalence rule (Eq-eq) and the transitivity of the equivalence relation, $\target{e_2} \equiv \target{e_2'}$. Similarly, I have $\target{e_1} \equiv \targetlab{\target{\flabel_i}}{\bar{x}}$, where $\target{\bar{x}}$ correspond to the free variables $\bar{x}$ in $\lambda^i$. Also,
+$\itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef}$.
+\\
+& Now my goal is to show that $\targetlab{\target{\flabel_i}}{\bar{x}} \equiv \target{e_2'}$. Indeed,
+$\target{e}\sub{\target{\bar{x}}}{\target{\bar{x}}} = \target{e} \equiv \targetapp{e_2'}{x}$ by the inductive hypothesis and $e \equiv e_2'\ x$. Therefore, $\target{e_1} \equiv \target{e_2}$ by the transitivity and the symmetry of the equivalence relation.
+\\
+Case & (Eq-Eta2):\\
+& This case is symmetric to case (Eq-Eta1). \qed
+\end{longtable}
+\label{lem:coherence}
+\end{lemma}
+
+\subsection{Type preservation}
+
+Now, I can prove that the transformation is type-preserving by a simultaneous induction on the two mutually defined judgements in CC: the well-formedness of contexts $\vdash \Gamma$ and the type judgement $\Gamma \vdash e \goodcolon A$.
+
+\begin{lemma}[Type preservation (technical)]
+\label{lem:type-preservation-tech}
+\end{lemma}
+
+Finally, I present the type preservation theorem in a more desired form.
+
+\begin{theorem}[Type preservation] For all type judgements $\Gamma \vdash e \goodcolon A$, $\bbracket{e}_d\ \semicolon \bbracket{\Gamma} \vdash \bbracket{e} \goodcolon \bbracket{A}$.
+\paragraph{Proof}
+\label{lem:type-preservation}
+\end{theorem}
+

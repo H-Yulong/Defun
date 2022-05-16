@@ -19,7 +19,7 @@
 \def\authorname{Yulong Huang\xspace}
 \def\authorcollege{Robinson College\xspace}
 \def\authoremail{yh419@cam.ac.uk}
-\def\dissertationtitle{Defunctionalization for dependently-typed languages}
+\def\dissertationtitle{Defunctionalization for {dependently typed} languages}
 \def\wordcount{?}
 
 
@@ -35,31 +35,44 @@
 \usepackage{simplebnf}
 \usepackage{mathtools}
 \usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{longtable}
 
 \theoremstyle{definition}
 \newtheorem{exmp}{Example}[section]
 \newtheorem{theorem}[exmp]{Theorem}
 \newtheorem{lemma}[exmp]{Lemma}
 \newtheorem{definition}[exmp]{Definition}
+\newtheorem{coro}[exmp]{Corollary}
+
+\DeclareMathSymbol{:}{\mathord}{operators}{"3A}
 
 \newcommand{\bbracket}[1]{{[\![ #1 ]\!]}}
 
-\newcommand{\target}[1]{{\color{purple}{\mathsf{#1}}}}
+\newcommand{\target}[1]{{\color{blue!95!white}{\mathsf{#1}}}}
 \newcommand{\flabel}{\mathfrak{L}}
 \newcommand{\fdef}{\mathfrak{D}}
 
-\newcommand{\itemtype}[2]{\mathsf{\color{purple}#1 \color{black} \textsf{ : } \color{purple}#2}}
-\newcommand{\itemdef}[4]{#1\ \target{\boldsymbol{\mapsto}}\ \textsf{(}\{#2\}\textsf{,}\ #3\textsf{,}\ #4\textsf{)}}
 
-\newcommand{\targetpi}[3]{\mathsf{\color{purple}Pi\color{black}\textsf{(}\color{purple}#1\color{black}\textsf{,} \color{purple}#2\color{black}, \color{purple}#3\color{black}\textsf{)} }}
+\newcommand{\semicolon}[0]{\hspace{0.5mm}\textsf{;}\hspace{0.5mm}}
+\newcommand{\goodcolon}[0]{\hspace{0.5mm}{:}\hspace{0.5mm}}
+\newcommand{\itemtype}[2]{\mathsf{\color{blue!95!white}#1 \color{black} {\goodcolon} \color{blue!95!white}#2}}
+\newcommand{\itemdef}[4]{#1\ \target{\boldsymbol{\mapsto}}\ \textsf{(}\{#2\}\textsf{,}\ #3\textsf{,}\ #4\textsf{)}}
+\newcommand{\sfcomma}{\textsf{, }}
+\newcommand{\sfpl}{\textsf{(}}
+\newcommand{\sfpr}{\textsf{)}}
+
+\newcommand{\targetpi}[3]{\mathsf{\color{blue!95!white}Pi\color{black}\textsf{(}\color{blue!95!white}#1\color{black}\textsf{,} \color{blue!95!white}#2\color{black}\textsf{,} \color{blue!95!white}#3\color{black}\textsf{)} }}
 \newcommand{\targetapp}[2]{\target{Apply\ #1 \ #2}}
 \newcommand{\targetlab}[2]{\target{#1}\{\target{#2}\}}
 \newcommand{\targetsub}[2]{[\target{#1} \slash \target{#2}]}
+\newcommand{\targetcon}{\target{\fdef} \semicolon \target{\Gamma}}
 
-\newcommand{\pitype}[3]{\Pi#1:#2.\ #3}
-\newcommand{\lam}[3]{\lambda#1:#2.\ #3}
-\newcommand{\lami}[4]{\lambda^{#1}#2:#3.\ #4}
-\newcommand{\sub}[2]{\textsf{[}#1\slash#2\textsf{]}}
+\newcommand{\pitype}[3]{\Pi #1\mkern1.5mu{\goodcolon} #2.\hspace{0.8mm}#3}
+\newcommand{\lam}[3]{\lambda#1\goodcolon#2.\ #3}
+\newcommand{\lami}[4]{\lambda^{#1}#2\goodcolon#3.\ #4}
+\newcommand{\sub}[2]{[#1\slash#2]}
 
 \newcommand{\codemath}[1]{$\mathtt{#1}$}
 \newcommand{\codedots}[0]{$\mathtt{\cdots}$}
@@ -69,38 +82,38 @@
 \begin{document}
 
 
-%% FRONTMATTER (TITLE PAGE, DECLARATION, ABSTRACT, ETC) 
-% \pagestyle{empty}
-% \singlespacing
-% \input{titlepage}
-% \onehalfspacing
-% \input{declaration}
-% \singlespacing
-% \input{abstract}
+% FRONTMATTER (TITLE PAGE, DECLARATION, ABSTRACT, ETC) 
+\pagestyle{empty}
+\singlespacing
+\input{titlepage}
+\onehalfspacing
+\input{declaration}
+\singlespacing
+\input{abstract}
 
-% \pagenumbering{roman}
-% \setcounter{page}{0}
-% \pagestyle{plain}
-% \tableofcontents
-% \listoffigures
-% \listoftables
+\pagenumbering{roman}
+\setcounter{page}{0}
+\pagestyle{plain}
+\tableofcontents
+\listoffigures
+\listoftables
 
-% \onehalfspacing
+\onehalfspacing
 
-%% START OF MAIN TEXT 
+% START OF MAIN TEXT 
 
-% \chapter{Introduction}
-% \pagenumbering{arabic} 
-% \setcounter{page}{1} 
-% \input{chapters/chap1}
+\chapter{Introduction}
+\pagenumbering{arabic} 
+\setcounter{page}{1} 
+\input{chapters/chap1}
 
-% \setcounter{chapter}{1}
-% \chapter{Background}
-% \input{chapters/chap2}
+\setcounter{chapter}{1}
+\chapter{Background}
+\input{chapters/chap2}
 
-% \setcounter{chapter}{2}
-% \chapter{A failed attempt}
-% \input{chapters/chap3}
+\setcounter{chapter}{2}
+\chapter{A failed attempt}
+\input{chapters/chap3}
 
 \setcounter{chapter}{3}
 \chapter{Abstract defunctionalization}
