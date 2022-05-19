@@ -2,20 +2,19 @@
 
 \section{Defunctionalized Calculus of\\Constructions (DCC)}
 
-Defunctionalized Calculus of Constructions (DCC) is the target language of type-preserving defunctionalization, and its expressions are written in a \color{blue!95!white}{\textsf{san-serif blue font}} \color{black} to distinguish them from source language expressions. 
+This section presents the formal definition of Defunctionalized Calculus of Constructions (DCC).
 
 \subsection{Syntax}
 Informally speaking, DCC is a language similar to CC, except that its syntax (Figure~\ref{fig:dcc syntax}) contains first-class function labels instead of lambda abstractions.
-DCC has an infinite hierarchy of predicative universes $\target{U_i}$, and its term expressions are: variables $\target{x}$ (from an infinite set of variable names), universes $\target{U}$, $\Pi$-types $\targetpi{x}{A}{B}$, applications $\targetapp{e_1}{e_2}$, and labels $\targetlab{\flabel}{\bar{e}}$.
+DCC has an infinite hierarchy of predicative universes $\target{U_i}$, and its term expressions are: variables $\target{x}$ (from an infinite set of variable names), universes $\target{U}$, $\Pi$-types $\targetpi{x}{A}{B}$, applications $\targetapp{e_1}{e_2}$, and labels $\targetlab{\flabel}{\bar{e}}$. Except for labels, all term expressions in DCC are the same as their counterparts in CC (in a different syntactic form).
 
-A label expression $\targetlab{\flabel}{\bar{e}}$ is a label name $\target{\flabel}$ supplied with a list of free variables $\target{e_1}, \cdots, \target{e_n}$. Labels can take zero free variable, but a label name by itself is not a term. In other words, $\target{\flabel}$ is not a term, but $\targetlab{\flabel}{}$ is. I write $\target{\bar{e}}$ as an abbreviation of a list of zero or more expressions. Label names $\target{\flabel_1}, \target{\flabel_2}, \cdots$ come from an infinite set of names which is disjoint to the set of variable names, and I write labels in a different font from variables to emphasise this.
+A label expression $\targetlab{\flabel}{\bar{e}}$ is a label name $\target{\flabel}$ supplied with a list of free-variables values $\target{e_1}, \cdots, \target{e_n}$. Labels can take zero free variable, but a label name by itself is not a term. In other words, $\target{\flabel}$ is not a term, but $\targetlab{\flabel}{}$ is. I write $\target{\bar{e}}$ as an abbreviation of a list of zero or more expressions. Label names $\target{\flabel_1}, \target{\flabel_2}, \cdots$ come from an infinite set of names which is disjoint to the set of variable names, and I write labels in a different font from variables to emphasise this.
 
 A DCC context $\targetcon$ consists of a context $\target{\Gamma}$ for types and a context $\target{\fdef}$ for label definitions. The type context is a list of variable-expression pairs. The label context is a list of label names $\target{\flabel}$ and their associated data 
 $\textsf{(}\{\itemtype{\bar{x}}{\bar{A}}\}\textsf{,}\ \targetpi{x}{A}{B} \textsf{,}\ \target{e} \textsf{)}$. 
 The first part $\{\itemtype{\bar{x}}{\bar{A}}\}$ records the types of free variables the label takes. 
 The second part $\targetpi{x}{A}{B}$ specifies the type of the label, and the third part $\target{e}$ is what the label reduces to when it is applied to an argument.
 
-In other words, if $\target{\flabel}$ corresponds to a function $f$ in the source language, then $\{\itemtype{\bar{x}}{\bar{A}}\}$, $\targetpi{x}{A}{B}$, and $\target{e}$ correspond to the type of free variables in $f$, $f$'s type, and $f$'s body respectively.
 I use $\itemtype{\bar{x}}{\bar{A}}$ as a syntactic sugar of $\itemtype{x_1}{A_1}, \cdots, \itemtype{x_n}{A_n}$. 
 Note that $\target{A_{i+1}}$ could depend on $\target{x_1}, \cdots, \target{x_i}$, and the list of free variables can be empty. Variables $\target{\bar{x}}$ also appear freely in $\targetpi{x}{A}{B}$. 
 
@@ -41,25 +40,6 @@ where $\target{\bar{e}}\targetsub{e}{x}$ is a syntactic sugar for $\target{e_1}\
 	\caption{DCC syntax}
     \label{fig:dcc syntax}
 \end{figure}
-
-%Context operations
-I define the \textit{union} of contexts and the \textit{subset relation} between contexts, which are often used in definitions and proofs in the rest of the dissertation.
-
-\begin{definition} The union of two type contexts $\target{\Gamma_1} \cup \target{\Gamma_2}$ is $\target{\Gamma_1}$ appended with all the variable-expression pairs $\itemtype{x}{A}$ that only appear in $\target{\Gamma_2}$ in the order of their apperence.
-\begin{align*}
-	&\target{\Gamma_1}\ \cup\ \target{\cdot} = \target{\Gamma_1}\\
-	&\target{\Gamma_1}\ \cup\ (\target{\Gamma_2}\sfcomma \itemtype{x}{A}) = 
-	\begin{cases} 
-		\target{\Gamma_1}\ \cup\ \target{\Gamma_2} & \itemtype{x}{A} \in \target{\Gamma_1}\\
-		(\target{\Gamma_1}\ \cup\ \target{\Gamma_2}) \sfcomma \itemtype{x}{A} & \text{otherwise}.\\
-	\end{cases}
-\end{align*}
-\end{definition}
-
-\begin{definition} A type context $\target{\Gamma_1}$ is a subset of another context $\target{\Gamma_2}$ if every variable-expression pair $\itemtype{x}{A}$ in $\target{\Gamma_1}$ is also in $\target{\Gamma_2}$.
-\end{definition}
-
-Similar definitions apply to the union and the subset relation for CC-contexts and label contexts.
 
 \subsection{Type judgements}
 % An expression $\target{e}$ is well-typed in $\targetcon$ if $\targetcon \vdash \itemtype{e}{A}$ is derivable for some $\target{A}$.
@@ -88,13 +68,13 @@ Each $\target{A_{i+1}}$ depends on $\target{x_1}, \cdots, \target{x_i}$, so $\ta
 Note that values of free variables $\target{\bar{e}}$ are substituted in $\targetpi{x}{A}{B}$, the specified type of the label. I use $\targetsub{\bar{e}}{\bar{x}}$ is a syntactic sugar of $[\target{e_1}\slash\target{x_1}\sfcomma \cdots\sfcomma \target{e_n}\slash\target{x_n}]$, and conditions (3) and (4) are abbreviated to $\targetcon \vdash \itemtype{\bar{e}}{\bar{A}}$ as a convention.
 
 % Well-formed context
-The DCC judgement for well-formed contexts is $\vdash \targetcon$ and the judgement for well-formed label contexts is $\vdash \target{\fdef}$. Their derivation rules are given in Figure~\ref{fig:dcc context}. A well-formed label context with an empty type context is a well-formed DCC context. 
-If $\targetcon$ is well-formed and $\target{A}$ is a valid type in it, then $\target{\fdef} \semicolon \target{\Gamma} \sfcomma \itemtype{x}{A}$ is also well-formed. 
+The DCC judgement for well-formed contexts is $\vdash \targetcon$ and the judgement for well-formed label contexts is $\vdash \target{\fdef}$. Their derivation rules are given in Figure~\ref{fig:dcc context}. A well-formed label context with an empty type context is a well-formed DCC context (WF-Empty). 
+If $\targetcon$ is well-formed and $\target{A}$ is a valid type in it, then $\target{\fdef} \semicolon \target{\Gamma} \sfcomma \itemtype{x}{A}$ is also well-formed (WF-Type). 
 
 % Well-formed label context
-For label contexts, the empty context is well-formed. A label context extended with an entry $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$ is well-formed if $\targetpi{x}{A}{B}$ is a valid type in $\target{\fdef} \semicolon \target{\Gamma_{fv}}$ and the type of $\target{e}$ is $\target{B}$ in $\target{\fdef} \semicolon \target{\Gamma_{fv}} \sfcomma \itemtype{x}{A}$. Here, $\target{\Gamma_{fv}}$ is the \textit{free variable type context} formed by the label's free variables, defined as $\target{\Gamma_{fv}} = \target{\cdot} \sfcomma \itemtype{\bar{x}}{\bar{A}}$.
+For label contexts, the empty context is well-formed (WFL-Empty). A label context extended with an entry $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$ is well-formed if $\targetpi{x}{A}{B}$ is a valid type in $\target{\fdef} \semicolon \target{\Gamma_{fv}}$ and the type of $\target{e}$ is $\target{B}$ in $\target{\fdef} \semicolon \target{\Gamma_{fv}} \sfcomma \itemtype{x}{A}$ (WFL-Label). Here, $\target{\Gamma_{fv}}$ is the \textit{free variable type context} formed by the label's free variables, defined as $\target{\Gamma_{fv}} = \target{\cdot} \sfcomma \itemtype{\bar{x}}{\bar{A}}$.
 
-\begin{figure}[H]
+\begin{figure}
 \renewcommand{\arraystretch}{1.3}
 	\begin{equation}
 		\tag{Var}
@@ -155,7 +135,7 @@ For label contexts, the empty context is well-formed. A label context extended w
     \label{fig:dcc typing}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}
 \renewcommand{\arraystretch}{1.3}
 	\begin{equation}
 		\tag{WF-Empty}
@@ -189,7 +169,7 @@ For label contexts, the empty context is well-formed. A label context extended w
     \label{fig:dcc context}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}
 \renewcommand{\arraystretch}{1.3}
 
 	\begin{align*}

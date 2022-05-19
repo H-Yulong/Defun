@@ -1,5 +1,21 @@
 % !TEX root = ../main.tex
 
+Function extraction is more subtle than transforming terms. Functions may appear in the type of an expression, even if the expression itself does not contain that function! For example, consider the following CC context and expression (with base type natural numbers $\mathbb{N}$).
+
+\begin{align*}
+	\Gamma\ & \triangleq\ \cdot,\ A \goodcolon (\mathbb{N} \rightarrow \mathbb{N}) \rightarrow U_0,\ 
+	a \goodcolon \pitype{f}{(\mathbb{N} \rightarrow \mathbb{N})}{A\ (\lam{n}{\mathbb{N}}{(f\ n) + 1})} \\
+	e\ & \triangleq\ a\ (\lam{x}{\mathbb{N}}{x+1})
+\end{align*}
+
+$A$ is a family of types indexed by functions of type $\mathbb{N} \rightarrow \mathbb{N}$, and $a\ f$ constructs an element of type $A\ (\lam{n}{\mathbb{N}}{(f\ n) + 1})$. According to the rule (Apply), the type of $e$ is 
+\begin{align*}
+	& (A\ (\lam{n}{\mathbb{N}}{(f\ n) + 1}))\sub{(\lam{x}{\mathbb{N}}{x+1})}{f}\\
+	=& A\ (\lam{n}{\mathbb{N}}{((\lam{x}{\mathbb{N}}{x+1})\ n) + 1}).
+\end{align*}
+Hence, a new function definition appeared in the type of $e$ as the result of a substitution! This new function should be included in the label context $\target{\fdef}$ to achieve type preservation. Extracting function definitions in $e$ involes finding every function that appeared in the type derivation of $e$. In other words, the transformation defunctionalizes not just the source-language expression, but its entire type derivation tree.
+
+
 \section{Type preservation}
 
 This section proves that the dependently typed defunctionalization is type-preserving and correct. The proof of type-preservation requires three lemmas: \textit{substitution}, \textit{preservation of reduction sequences}, and \textit{coherence}. The proof of correctness follows directly from the preservation of reduction sequences. Unless explicitly noted, I use $\target{e}$ to stand for $\bbracket{e}$ in this section.

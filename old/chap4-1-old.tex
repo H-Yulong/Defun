@@ -1,0 +1,45 @@
+% !TEX root = ../main.tex
+
+\section{Main ideas}
+
+Generally speaking, defunctionalization is a transformation that eliminates functions by replacing them with a special kind of first-class values, which I refer to as \textit{labels}. Each source-program function uniquely corresponds to a label in the target program. 
+A label carries a list of values assigned to its corresponding function's free variables, similar to a function closure with the closure environment. 
+The transformation turns function applications to calls to an auxiliary \textit{apply} function, which takes a label and the function argument and returns the result of the label's corresponding function applied to the argument.
+
+For instance, polymorphic defunctionalization in OCaml uses constructors of a generalized abstract data type (GADT) \texttt{lam} as labels.
+In other words, the transformation turns a function \texttt{f:a -> b} with free variables \texttt{x1:t1, ..., xn:tn} to a constructor that takes arguments of types \texttt{t1, ..., tn} and constructs an expression of type \texttt{(a, b) lam}.
+\begin{lstlisting}
+	Fun : t1 -> ... -> tn -> (a, b) lam
+\end{lstlisting}
+The \texttt{apply} function is defined in the following form. It takes two arguments \texttt{f} and \texttt{arg}, performs pattern-matching on \texttt{f}, and executes \texttt{e}, which corresponds to the function body of \texttt{f}.
+\begin{lstlisting}
+	let apply : type a b. (a, b) lam -> a -> b =
+	    fun f arg -> match f with
+	    	| Fun(x1, ..., xn) -> e
+\end{lstlisting}
+
+Ideally, dependently typed defunctionalization should follow the same principle. However, Chapter 3 showed that inductive families, the counterpart of GADTs in dependently typed languages, could not be used as labels. Their constructors cannot accept arguments from universes higher than the universe of the inductive definition, but functions could contain free variables from arbitrarily high universes.
+
+One alternative approach is to design a language with function labels as primitives and use it as the target language of the transformation. 
+For example, Minamide et al.~presented a type-preserving closure conversion from the simply typed lambda calculus to a typed intermediate language with closures as first-class values~\cite{DBLP:conf/popl/MinamideMH96}. They named this method \textit{abstract closure conversion}, and Bowman et al.~adapted it to dependently typed closure conversion~\cite{DBLP:conf/pldi/BowmanA18}. 
+
+Abstract defunctionalization took inspiration from works of Minamide et al. and Bowman et al. It consists of a target language, the Defunctionalized Calculus of Constructions (DCC), and a type-preserving transformation from CC to it. 
+In DCC, labels are first-class values given by the syntax and the \textit{apply} function is built-in as a part of the type system. The transformation is straightforward: it turns CC functions into labels and functions applying to arguments into labels applying to arguments.
+
+% The following information of a label's corresponding source-program function are required for the transformation to produce well-typed target programs.
+% \begin{itemize}
+% 	\item The function's free variables $x_1 : A_1, \cdots, x_n : A_n$.
+% 	\item The function's type $\pitype{x}{A}{B}$.
+% 	\item The function body $e$.
+% \end{itemize}
+% In polymorphic defunctionalization, this information is encoded in definition of the data type \texttt{lam} and the function \texttt{apply} implicitly. In DCC, they are explicitly associated to the label in a special context for labels.
+
+
+
+
+
+
+
+
+
+

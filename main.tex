@@ -49,10 +49,12 @@
 \DeclareMathSymbol{:}{\mathord}{operators}{"3A}
 
 \newcommand{\bbracket}[1]{{[\![ #1 ]\!]}}
+\newcommand{\ccs}{CC$_S$}
 
 \newcommand{\target}[1]{{\color{blue!95!white}{\mathsf{#1}}}}
 \newcommand{\flabel}{\mathfrak{L}}
 \newcommand{\fdef}{\mathfrak{D}}
+\newcommand{\helper}[1]{\color{blue!95!white}{#1}\color{black}}
 
 
 \newcommand{\semicolon}[0]{\hspace{0.5mm}\textsf{;}\hspace{0.5mm}}
@@ -82,43 +84,46 @@
 \begin{document}
 
 
-% FRONTMATTER (TITLE PAGE, DECLARATION, ABSTRACT, ETC) 
-\pagestyle{empty}
-\singlespacing
-\input{titlepage}
-\onehalfspacing
-\input{declaration}
-\singlespacing
-\input{abstract}
+% % FRONTMATTER (TITLE PAGE, DECLARATION, ABSTRACT, ETC) 
+% \pagestyle{empty}
+% \singlespacing
+% \input{titlepage}
+% \onehalfspacing
+% \input{declaration}
+% \singlespacing
+% \input{abstract}
 
-\pagenumbering{roman}
-\setcounter{page}{0}
-\pagestyle{plain}
-\tableofcontents
-\listoffigures
-\listoftables
+% \pagenumbering{roman}
+% \setcounter{page}{0}
+% \pagestyle{plain}
+% \tableofcontents
+% \listoffigures
+% \listoftables
 
-\onehalfspacing
+% \onehalfspacing
 
-% START OF MAIN TEXT 
+% % START OF MAIN TEXT 
 
-\chapter{Introduction}
-\pagenumbering{arabic} 
-\setcounter{page}{1} 
-\input{chapters/chap1}
+% \chapter{Introduction}
+% \pagenumbering{arabic} 
+% \setcounter{page}{1} 
+% \input{chapters/chap1}
 
-\setcounter{chapter}{1}
-\chapter{Background}
-\input{chapters/chap2}
+% \setcounter{chapter}{1}
+% \chapter{Background}
+% \input{chapters/chap2}
 
-\setcounter{chapter}{2}
-\chapter{A failed attempt}
-\input{chapters/chap3}
+% \setcounter{chapter}{2}
+% \chapter{A failed attempt}
+% \input{chapters/chap3}
 
-\setcounter{chapter}{3}
-\chapter{Abstract defunctionalization}
-\input{chapters/chap4}
+% \setcounter{chapter}{3}
+% \chapter{Abstract defunctionalization}
+% \input{chapters/chap4}
 
+\setcounter{chapter}{4}
+\chapter{Type preservation, correctness, and consistency}
+\input{chapters/chap5}
 
 %\appendix
 \singlespacing
