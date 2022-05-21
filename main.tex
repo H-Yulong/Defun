@@ -23,6 +23,8 @@
 \def\wordcount{?}
 
 
+
+
 %\usepackage[dvips]{epsfig,graphics} 
 \usepackage{epsfig,graphicx,verbatim,parskip,tabularx,setspace,xspace}
 \usepackage{microtype}
@@ -38,6 +40,8 @@
 \usepackage{hyperref}
 \usepackage{float}
 \usepackage{longtable}
+\usepackage{geometry}
+\usepackage{enumitem}
 
 \theoremstyle{definition}
 \newtheorem{exmp}{Example}[section]
@@ -48,14 +52,27 @@
 
 \DeclareMathSymbol{:}{\mathord}{operators}{"3A}
 
+\geometry{
+	paper=a4paper,
+	top=2cm,
+	bottom=2cm,
+	left=2.5cm,
+	right=2.5cm,
+	headheight=0pt,
+	headsep=2cm,
+	includefoot
+}
+
 \newcommand{\bbracket}[1]{{[\![ #1 ]\!]}}
+\newcommand{\bluebr}[1]{\color{blue!95!white}{[\![ \color{black}#1\color{blue!95!white} ]\!]}\color{black}}
 \newcommand{\ccs}{CC$_S$}
 
 \newcommand{\target}[1]{{\color{blue!95!white}{\mathsf{#1}}}}
 \newcommand{\flabel}{\mathfrak{L}}
 \newcommand{\fdef}{\mathfrak{D}}
-\newcommand{\helper}[1]{\color{blue!95!white}{#1}\color{black}}
-
+\newcommand{\helper}[1]{\color{teal}{#1}\color{black}}
+\newcommand{\hbracket}[1]{\helper{[\![}{#1}\helper{]\!]}}
+\newcommand{\hbracketd}[1]{\helper{[\![}{#1}\helper{]\!]_d}}
 
 \newcommand{\semicolon}[0]{\hspace{0.5mm}\textsf{;}\hspace{0.5mm}}
 \newcommand{\goodcolon}[0]{\hspace{0.5mm}{:}\hspace{0.5mm}}
@@ -100,26 +117,26 @@
 % \listoffigures
 % \listoftables
 
-% \onehalfspacing
+\onehalfspacing
 
 % % START OF MAIN TEXT 
 
-% \chapter{Introduction}
-% \pagenumbering{arabic} 
-% \setcounter{page}{1} 
-% \input{chapters/chap1}
+\chapter{Introduction}
+\pagenumbering{arabic} 
+\setcounter{page}{1} 
+\input{chapters/chap1}
 
-% \setcounter{chapter}{1}
-% \chapter{Background}
-% \input{chapters/chap2}
+\setcounter{chapter}{1}
+\chapter{Background}
+\input{chapters/chap2}
 
-% \setcounter{chapter}{2}
-% \chapter{A failed attempt}
-% \input{chapters/chap3}
+\setcounter{chapter}{2}
+\chapter{A failed attempt}
+\input{chapters/chap3}
 
-% \setcounter{chapter}{3}
-% \chapter{Abstract defunctionalization}
-% \input{chapters/chap4}
+\setcounter{chapter}{3}
+\chapter{Abstract defunctionalization}
+\input{chapters/chap4}
 
 \setcounter{chapter}{4}
 \chapter{Type preservation, correctness, and consistency}

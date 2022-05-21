@@ -1,23 +1,23 @@
 % !TEX root = ../main.tex
 
-This chapter shows that the polymorphic defunctionalization technique cannot be adapted to dependent types. Section~\ref{sec:3.1} introduces \textit{inductive families}, a more general version of GADTs in dependently typed languages. Section~\ref{sec:3.2} proves that it is impossible to define type-preserving defunctionalization using inductive families.
+This chapter shows that the polymorphic defunctionalization technique cannot be adapted to dependent types. Section~\ref{sec:3.1} introduces \textit{inductive families}, a more general version of GADTs in dependently-typed languages. Section~\ref{sec:3.2} proves that it is impossible to define type-preserving defunctionalization using inductive families.
 
 \section{Inductive families}
 \label{sec:3.1}
 
-This section introduces inductively defined data types (inductive families), and I present code examples in Agda, a dependently typed programming language with a Haskell-like syntax. No knowledge of Agda is required to understand the contents of this section, except for two things:
+This section introduces inductively defined data types (inductive families), and I present code examples in Agda, a dependently-typed programming language with a Haskell-like syntax. No knowledge of Agda is required to understand the contents of this section, except for two things:
 \begin{itemize}
   \item In Agda, there is an infinite hierarchy of predicative universes \[ \mathtt{Set_0 : Set_1 : Set_2 : \cdots} \] similar to the hierarchy in CC.
   \item The dependent function type $\pitype{x}{A}{B}$ is written as \texttt{(x:A) -> B} in Agda's syntax.
 \end{itemize}
 
-Agda supports inductive families, which are essentially inductively defined data types indexed by values~\cite{AgdaDoc}. Their constructors may return elements in an arbitrary type of the indexed family. Example~\ref{ex:fin} shows the definition of \texttt{Fin}, the inductive family of finite sets.
+Agda supports inductive families, which are essentially inductively defined data types indexed by terms~\cite{AgdaDoc}. Their constructors may return elements in an arbitrary type of the indexed family. Example~\ref{ex:fin} shows the definition of \texttt{Fin}, the inductive family of finite sets.
 
-\begin{exmp} \texttt{Fin} is a data type indexed by natural numbers, and there are exactly \texttt{n} valid expressions of type \texttt{Fin n}.
+\begin{exmp} \texttt{Fin} is a data type indexed by natural numbers (\texttt{Nat}) such that there are exactly \texttt{n} valid expressions of type \texttt{Fin n}. Given a natural number \texttt{n}, \texttt{fzero}constructs an element of type \texttt{Fin n+1}; given a natural number \texttt{n} and an element of type \texttt{Fin n}, \texttt{fsucc} constructs an element of type \texttt{Fin n+1}.
 \begin{lstlisting}[escapechar=@]
 data Fin : Nat -> @\codemath{Set_0}@ where
-    fzero : (n : Nat) -> Fin (suc n)
-    fsuc : (n : Nat) -> Fin n -> Fin (suc n)
+    fzero : (n : Nat) -> Fin (n + 1)
+    fsuc : (n : Nat) -> Fin n -> Fin (n + 1)
 \end{lstlisting}
 \label{ex:fin}
 \end{exmp}
@@ -33,7 +33,7 @@ data D : (@\codemath{y_1}@ : @\codemath{T_1}@) -> @\codedots@ -> (@\codemath{y_n
 \begin{lstlisting}[escapechar=@]
 (@\codemath{z_1}@ : @\codemath{S_1}@) -> @\codedots@ -> (@\codemath{z_m}@ : @\codemath{S_m}@) -> (D @\codemath{t_1}@ @\codedots@ @\codemath{t_n}@).
 \end{lstlisting}
-Note that arguments to \texttt{D} and \texttt{c} are dependently typed -- \codemath{T_{i+1}} could depend on \codemath{y_1 \cdots y_i}, and \codemath{S_{i+1}} could depend on \codemath{z_1 \cdots z_i}. Also, \codemath{y_1 \cdots y_n} are not bound to constructors.
+Note that arguments to \texttt{D} and \texttt{c} are dependently typed -- \codemath{T_{i+1}} could mention \codemath{y_1 \cdots y_i}, and \codemath{S_{i+1}} could mention \codemath{z_1 \cdots z_i}. Also, \codemath{y_1 \cdots y_n} are not bound in \codemath{A_i}.
 
 Not all inductive definitions are consistent -- some contain impredicative constructors (the constructor's universe is larger than the data type's), and some admit non-terminating functions. These definitions are sources of paradoxes, which Agda excludes by performing a \textit{universe check} and a \textit{positivity check} on inductive definitions. Take the data type \texttt{D} defined above as an example, it must satisfy two additional conditions:
 \begin{itemize}
@@ -41,18 +41,20 @@ Not all inductive definitions are consistent -- some contain impredicative const
   \item \texttt{D} must occur \textit{strictly positively} in types of its constructor's arguments.
 \end{itemize}
 
-Concretely, the universe of every argument type \codemath{S_i} (the type of \codemath{S_i}) should be smaller than \codemath{Set_d} to pass the universe check. To pass the positivity check, constructors cannot return self-indexing types like \texttt{(D (D \codedots )} \texttt{\codedots )}, and every argument type \codemath{S_i} must either:
+Concretely, the universe of every argument type \codemath{S_i} (the type of \codemath{S_i}) should be smaller than \codemath{Set_d} to pass the universe check. Having strict positivity means that constructors cannot return self-indexing types like \texttt{(D (D \codedots )} \texttt{\codedots )}, and every argument type \codemath{S_i} must either:
 \begin{itemize}
-  \item do not mention \texttt{D} at all.
+  \item not mention \texttt{D} at all.
   \item mention \texttt{D} in the form of \texttt{\codemath{S_i} = (\codemath{x_1 : C_1}) -> \codemath{\cdots} -> (\codemath{x_k : C_k}) -> D}, where \texttt{D} does not occur in any \codemath{C_j} (arguments to \texttt{D} omitted).
 \end{itemize}
+
+The requirements for strict posivitity and universes are shared across many dependently-typed languages that support inductive families, like Coq's Gallina~\cite{?} or Timany and Sozeau's pCuIC~\cite{?}. 
 
 \section{Failure to defunctionalize}
 \label{sec:3.2}
 
-In this section, I prove that it is impossible to perform defunctionalization using inductive families. Chapter 2 illustrated that type-preserving defunctionalization can be done with ADTs for simple types and GADTs for polymorphic types. In polymorphic defunctionalization, a function of type \texttt{a -> b} is translated to a constructor of a GADT \texttt{lam}, and the constructor's return type is \texttt{(a, b) lam} (Example 2.1.2). Similarly, we can try to define an inductive family \texttt{Pi}, and translate each dependent function of type $\pitype{x}{A}{B}$ to a constructor of \texttt{Pi A B}. 
+In this section, I illustrate that it is impossible to adapt the method of performing polymorphic defunctionalization to dependently-typed languagesusing inductive families. Chapter 2 illustrated that type-preserving defunctionalization can be done with ADTs for simple types and GADTs for polymorphic types. In polymorphic defunctionalization, a function of type \texttt{a -> b} is translated to a constructor of a GADT \texttt{lam}, and the constructor's return type is \texttt{(a, b) lam} (Example 2.1.2). Similarly, we can try to define an inductive family \texttt{Pi}, and translate each dependent function of type $\pitype{x}{A}{B}$ to a constructor of \texttt{Pi A B} (suppose that \texttt{Pi} has a way of encoding \texttt{B}'s dependency on terms of type \texttt{A}). 
 
-Suppose the source language is CC and the target language is Agda. Let $\bbracket{-}$ denotes the defunctionalization transformation. I assume that $\bbracket{f} =$ \texttt{Fun}, i.e.~$\bbracket{-}$ turns a function in source to a unique constructor \texttt{Fun} of an inductively defined data type in target, and each free variable in $f$ corresponds to an argument to \texttt{Fun}. 
+Suppose the source language is CC and the target language is Agda. Let $\bbracket{-}$ denote the defunctionalization transformation. I assume that $\bbracket{\lam{x}{A}{e}} =$ \texttt{Fun}, i.e.~$\bbracket{-}$ turns a function in source to a unique constructor \texttt{Fun} of an inductively defined data type in target, and each free variable in $\lam{x}{A}{e}$ corresponds to an argument to \texttt{Fun}. 
 
 Ideally, $\bbracket{-}$ should be type-preserving -- well-typed source programs are translated to well-typed target programs. Clearly, the hypothesis of having a type-preserving transformation where $\bbracket{\pitype{x}{A}{B}} =$ \texttt{Pi }$\bbracket{A}\ \bbracket{B}$ does not hold, since it translates functions of type $A \rightarrow (A \rightarrow A)$ to constructors returning \texttt{Pi} $\bbracket{A}$ \texttt{(Pi} $\bbracket{A}$ $\bbracket{A}$ \texttt{)}, which fails the positivity check for inductive definitions. In fact, we cannot translate $\pitype{x}{A}{B}$ to an element of any inductive family in a type-preserving way. I proof this with the help of the following lemma.
 
@@ -81,7 +83,7 @@ Assume that $\bbracket{-}$ is type-preserving, $\bbracket{\pitype{x}{A}{B}}$ is 
 data D : (@\codemath{y_1}@ : @\codemath{T_1}@) -> @\codedots@ -> (@\codemath{y_n}@ : @\codemath{T_n}@) -> @\codemath{Set_n}@
 \end{lstlisting}
 \texttt{D} is in universe \codemath{Set_n} because $\bbracket{-}$ is type preserving.
-Pick an arbitrary function $\Gamma \vdash f : \pitype{x}{A}{B}$ in the source language. By assumption, $\bbracket{f} =$ \texttt{Fun}, which is a valid constructor of \texttt{D}. The general form of \texttt{Fun} is
+Pick an arbitrary function $f$ in the source language and suppose that its type is $\pitype{x}{A}{B}$. By assumption, $\bbracket{f} =$ \texttt{Fun}, which is a valid constructor of \texttt{D}. The general form of \texttt{Fun} is
 \begin{lstlisting}[escapechar=@]
 Fun : (@\codemath{z_1}@ : @\codemath{S_1}@) -> @\codedots@ -> (@\codemath{z_m}@ : @\codemath{S_m}@) -> (D @\codemath{t_1}@ @\codedots@ @\codemath{t_n}@)
 \end{lstlisting}

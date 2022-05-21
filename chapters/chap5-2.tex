@@ -1,0 +1,163 @@
+% !TEX root = ../main.tex
+
+\section{Type safety and consisntency}
+\label{sec:5.2}
+
+As a dependent type theory, DCC should be type-safe when it acts as a programming language and consistent when interpreted as a logic system. I proof these properties in this section by defining a \textit{backward transformation} from DCC to CC. If the backward transformation preserves reduction sequences, then reducing a term in DCC is equivalent to reducing a term in CC. If the transformation is type-preserving and it turns the logical interpretation of \textit{false} in DCC into that of CC, then valid proofs (well-typed programs) in DCC correspond to valid proofs in CC. This reduces the problem of proving the type safety and consistency of DCC to proving that of CC, which is a standard result. In other words, I show that DCC can be modelled by CC in a consistent and meaning-preserving way. This is a standard technique in the literature~\cite{DBLP:conf/cpp/BoulierPT17,DBLP:conf/pldi/BowmanA18}. There is no particular difficulty in proving lemmas in this section; all proofs follow from induction. 
+
+I define the backward transformation $\bluebr{-}$ with a new judgement (Figure~\ref{fig:backward transformation}) of the form $\targetcon \vdash \itemtype{e}{A} \leadsto_b e$ and $\bluebr{\target{e}} \triangleq e$. It transcribes variables, universes, $\Pi$-types, and applications back to their corresponding forms in CC. For a label term $\targetlab{\flabel}{\bar{x}}$ where 
+$\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$, the transformation turns it into 
+$(\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})$ -- a function with all of its free-variable values substituted in, where $A$, $e$, and $\bar{e}$ stand for $\bluebr{\target{A}}$, $\bluebr{\target{e}}$, and $\bluebr{\target{\bar{e}}}$ respectively (B-Label). Intuitively, $\bluebr{-}$ decompiles a label back to the function it represents. The backward transformation also acts pointwise on DCC's type context.
+
+\begin{figure}
+	\begin{equation}
+		\tag{B-Var}
+		\frac
+			{}
+			{\targetcon \vdash \target{x} \goodcolon \target{A} \leadsto_b x}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{B-Universe}
+		\frac
+			{}
+			{\targetcon \vdash \target{U_i} \goodcolon \target{U_{i+1}} \leadsto_b U_i}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{B-Pi}
+		\frac
+			{\targetcon \vdash \target{A} \goodcolon \target{U_i} \leadsto_b {A} \qquad \targetcon, \target{x} \goodcolon \target{A} \vdash \target{B} \goodcolon \target{U_j} \leadsto B
+			}
+			{\targetcon \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U_{max(i, j)}} \leadsto_b \pitype{x}{A}{B}}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{B-Apply}
+		\qquad\qquad\quad
+		\frac
+			{\targetcon \vdash \target{e_1} \goodcolon \targetpi{x}{A}{B} \leadsto_b e_1 \qquad \Gamma \vdash \target{e_2} \goodcolon \target{A} \leadsto_b e_2}
+			{\targetcon \vdash \targetapp{e_1}{e_2} \goodcolon  \mathrel{:} \target{B}\sub{\target{e2}}{\target{x}} \leadsto_b e_1 \ e_2 }
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{B-Lambda}
+		\qquad\qquad
+		\frac
+			{\begin{array}{l @{\qquad} r}
+			  	\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef} &
+			  	\targetcon \vdash \itemtype{\bar{e}}{\bar{A}} \leadsto_b \bar{e} \\
+			  	\targetcon \vdash \itemtype{A}{U} \leadsto_b A &
+			  	\targetcon \sfcomma \itemtype{x}{A} \vdash \itemtype{e}{B} \leadsto_b e \\
+			 \end{array}	 
+			}
+			{\quad \target{\fdef}\semicolon \target{\Gamma} \vdash \targetlab{\flabel}{\bar{e}} \mathrel{:} 
+			 \target{Pi}\textsf{(}\target{x}\textsf{,} \target{A} \targetsub{\bar{e}}{\bar{x}}\textsf{,} \target{B} \targetsub{\bar{e}}{\bar{x}}\textsf{)} \leadsto_b (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})
+			}
+	\end{equation} \hspace{0.5cm}
+	\begin{equation}
+		\tag{B-Equiv}
+		\frac
+			{\targetcon \vdash \target{e} \goodcolon \target{A} \leadsto_b e}
+			{\targetcon \vdash \target{e} \goodcolon \target{B} \leadsto_b e}
+	\end{equation}
+	\caption{Backward transformation}
+    \label{fig:backward transformation}
+\end{figure}
+
+In CC, the interpretation of the logical \textit{false} is $\pitype{A}{U_0}{A}$. There is no closed expression with the \textit{false} type. In DCC, the interpretation of \textit{false} is $\targetpi{A}{U_0}{A}$, so the backward transformation preserves falseness by definition. 
+
+Next, I show that the backward transformation is compatible with subsitutions. As a convention in this chapter, I use $e$ to stand for $\bluebr{\target{e}}$ when there is no ambiguity.
+
+\begin{lemma} If $\targetcon \sfcomma \itemtype{x}{A} \vdash \itemtype{e_1}{B}$ and $\targetcon \vdash \itemtype{e_2}{A}$, then $\bluebr{\target{e_1}\targetsub{e_2}{x}} = e_1\sub{e_2}{x}$.
+\paragraph{Proof.} I proof by induction on the type derivation of $\target{e_1}$. The only non-trivial case is (Label), all other cases follow directly from the induction hypothesis.
+
+In case (Label), I have $\targetcon \sfcomma \itemtype{y}{C} \vdash \targetlab{\flabel}{\bar{e}} : \targetpi{x}{A}{B}$,
+$\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef}$, 
+and $\targetcon \vdash \itemtype{e_2}{C}$. My goal is showing that 
+$ \bluebr{\sfpl \targetlab{\flabel}{\bar{e}} \sfpr \targetsub{e_2}{y}} = (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})\sub{e_2}{y}$. Indeed, I have
+\begin{equation*}
+	\bluebr{\sfpl \targetlab{\flabel}{\bar{e}} \sfpr \targetsub{e_2}{y}} = 
+	\bluebr{\target{\flabel}\{\target{\bar{e}}\targetsub{e_2}{y}\}}\\
+	= \lam{x}{A\sub{(\bar{e}\sub{e_2}{y})}{\bar{x}}}{e\sub{(\bar{e}\sub{e_2}{y})}{\bar{x}}}
+\end{equation*}
+by the induction hypothesis, and
+\begin{align*}
+	(\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})\sub{e_2}{y} &= 
+	\lam{x}{((A\sub{\bar{e}}{\bar{x}}) \sub{e_2}{y})} {((e\sub{\bar{e}}{\bar{x}})\sub{e_2}{y})}\\
+	&= \lam{x}{A\sub{(\bar{e}\sub{e_2}{y})}{\bar{x}}}{e\sub{(\bar{e}\sub{e_2}{y})}{\bar{x}}}
+\end{align*}
+since $y$ is not free in $A$ and $e$ ($\bar{x}$ are all the free variables in them). \qed
+\end{lemma}
+
+Similar to proofs in Section 5.1, I show preservation of reduction sequences by showing that the transformation preserves small-step reductions.
+\begin{lemma} If $\targetcon \vdash \target{e_1} \triangleright \target{e_2}$, then $\Gamma \vdash e_1 \triangleright^* e_2$.
+\paragraph{Proof.} There is only one reduction rule in DCC.
+
+Assume that 
+$\targetcon \vdash \ \target{Apply\ } \target{\flabel}\{\target{\bar{e}}\}\ \target{e_2}\ \triangleright\  \target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}]$ and 
+$\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e_1}} \in \target{\fdef}$.
+I have $\bluebr{\target{Apply\ } \target{\flabel}\{\target{\bar{e}}\}\ \target{e_2}} = (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e_1\sub{\bar{e}}{\bar{x}}})$, and
+\begin{align*}
+\Gamma \vdash (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e_1\sub{\bar{e}}{\bar{x}}})\ e_2\ &\triangleright\
+(e_1\sub{\bar{e}}{\bar{x}})\sub{e_2}{x}\\
+&= e_1[\bar{e} \slash \bar{x}, e_2 \slash x] \text{ since $x$ is not free in $\bar{e}$}\\
+&= \bluebr{\target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}]} \text{ by substitution.} \qed
+\end{align*}
+\label{lem:back prev sequence}
+\end{lemma}
+
+I also need to show coherence for the backward transformation.
+
+\begin{lemma}If $\targetcon \vdash \target{e_1} \equiv \target{e_2}$, then $\Gamma \vdash e_1 \equiv e_2$.
+\paragraph{Proof.} I proof with an induction on DCC's equivalence rules. I only show case (Eq-Eta1) since case (Eq-Eta2) is symmetric and Rule (Eq-reduce) is trivial by preservation of reduction sequences.
+
+In case (Eq-Eta1), I have
+\begin{equation}
+	\frac
+	{\begin{array}{l}
+	  \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \targetlab{\flabel}{\bar{e}} \qquad
+      \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_2} \triangleright^* \target{e_2'} \\
+      \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef} \\
+      \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A} \targetsub{\bar{e}}{\bar{x}} \vdash 
+      \target{e}\targetsub{\bar{e}}{\bar{x}} \equiv \targetapp{e_2'}{x}
+	\end{array}}
+	{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}}
+\end{equation}
+and my goal is $\Gamma \vdash e_1 \equiv e_2$. By Lemma~\ref{lem:back prev sequence}, 
+$\Gamma \vdash e_1\ \triangleright^* (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})$ and 
+$\Gamma \vdash e_2\ \triangleright^* e_2'$.
+By the induction hypothesis and the substitution lemma, 
+\[
+\Gamma, x \goodcolon A \vdash e\sub{\bar{e}}{x} \equiv e_2'\ x.
+\]
+Therefore, $\Gamma \vdash e_1 \equiv e_2$ by CC's equivalence rule (Eq-Eta1). \qed
+\end{lemma}
+
+The final lemma I need is type preservation.
+
+\begin{lemma} If $\targetcon \vdash \itemtype{e}{A}$, then $\Gamma \vdash e \goodcolon A$.
+\paragraph{Proof.} I prove the following two statements together with a simulteneous induction on mutually-defined judgements $\vdash \targetcon$ and $\targetcon \vdash \itemtype{e}{A}$.
+\begin{enumerate}
+	\item $\vdash \targetcon \Longrightarrow\ \vdash \Gamma$.
+	\item $\targetcon \vdash \itemtype{e}{A} \Longrightarrow\ {\Gamma} \vdash {e} \goodcolon {A}$.
+\end{enumerate}
+Statement $1$ follows trivially from the inductive hypothesis. For statement $2$, cases (Var), (Universe), and (Pi) are trivial by induction. (Equiv) follows directly from the coherence lemma, and cases (Apply) and (Label) are proved easily with the substitution lemma. \qed
+
+% In case (Label), I have
+% \begin{equation*}
+% \frac
+% 	{\begin{array}{l}
+% 	  	\vdash \target{\fdef}\semicolon \target{\Gamma} \qquad\qquad\qquad \target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{\bar{e}}{\bar{A}} \\
+% 	  	\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef} \\
+% 	 \end{array}	 
+% 	}
+% 	{\quad \target{\fdef}\semicolon \target{\Gamma} \vdash \targetlab{\flabel}{\bar{e}} \mathrel{:} 
+% 	 \target{Pi}\textsf{(}\target{x}\textsf{,} \target{A} \targetsub{\bar{e}}{\bar{x}}\textsf{,} \target{B} \targetsub{\bar{e}}{\bar{x}}\textsf{)} \quad
+% 	}
+% \end{equation*}
+% and my goal is $\Gamma \vdash (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}}) \mathrel{:}
+%  \pitype{x}{A\sub{\bar{e}}{\bar{x}}}{B\sub{\bar{e}}{\bar{x}}}$.
+\end{lemma}
+
+% As a corollary of the lemmas shown in this section, DCC is type-safe and consistent since CC is.
+
+
+
+

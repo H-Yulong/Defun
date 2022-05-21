@@ -4,5 +4,8 @@
 *.blg
 *.gz
 *.pdf
-./old
+*.lof
+*.lot
+*.toc
+old/*
 
