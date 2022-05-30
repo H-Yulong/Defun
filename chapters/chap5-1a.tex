@@ -2,86 +2,105 @@
 
 \section{Correctness and type preservation}
 \label{sec:5.1}
-I proof that dependently typed defunctionalization is type-preserving and correct in this section. As shown in Example 4.3.3, it is easy to verify those properties for a particular example program, but they are difficult to proof in general. Firstly, I give the definition of the correctness of the transformation.
+As shown in Example~\ref{ex:defun example}, it is easy to verify correctness and type preservation for a particular example program, but it is more difficult to prove that they hold for the transformation itself.
+Firstly, I give the definition of the correctness of the transformation.
 
 \begin{definition}
-Dependently typed defunctionalization is correct if for all ground types $A$ and values $v$ of type $A$,
+Dependently typed defunctionalization is \textit{correct} if for all base types $A$ and values $v$ of type $A$,
 \begin{equation*}
 	\cdot \vdash e \goodcolon A \ \land \
 	\cdot \vdash e\ \triangleright^* v\ \Longrightarrow\ 
 	\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e}} \sfpr \semicolon \target{\cdot} \vdash \target{e}\ \triangleright^* \target{v'} \text{ where } \target{v'} \equiv \target{v}.
 \end{equation*}
 \end{definition}
-In other words, if a closed program $e$ evaluates to a ground value $v$, then $\target{e}$ evaluates to a ground value $\target{v'}$ that is equivalent to $\target{v}$. Ideally, this follows as a corollary of \textit{preservation of reduction sequences}.
+In other words, if a closed program $e$ evaluates to a base-type value $v$, then $\target{e}$ evaluates to a base-type value $\target{v'}$ that is equivalent to $\target{v}$. Ideally, this follows as a corollary of the \textit{preservation of reduction sequences}.
 \begin{definition}
-Dependently typed defunctionalization preserves reduction sequences if
-\begin{equation*}
+Dependently typed defunctionalization \textit{preserves reduction sequences} if
+\begin{align*}
 	\Gamma \vdash e_1\ \triangleright^* e_2\ \Longrightarrow\ 
-	\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr \semicolon \target{\Gamma} \vdash
-	\target{e_1}\ \triangleright^* \target{e} \text{ where } \target{e} \equiv \target{e_2}.
-\end{equation*}
+	&\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr \semicolon \target{\Gamma} \vdash
+	\target{e_1}\ \triangleright^* \target{e},\\ 
+	&\text{ where } \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr \semicolon \target{\Gamma} \vdash \target{e} \equiv \target{e_2}.
+\end{align*}
 \end{definition}
 
-Ideally, I could show this property by showing that the transformation preserves all small-step reductions $\Gamma \vdash e_1\ \triangleright e_2$, and then proof by induction on the number of reduction steps in a sequence. However, CC's meta-language substitution $(\lam{x}{A}{e_1})\sub{e_2}{y}$ creates a new function definition when it substitutes an expression into a free variable of the function.
-So, for a reduction sequence $e_1\ \triangleright \cdots \ \triangleright e_n$ in CC, some $e_i$ may contain function definitions that do not exist in $e_1$ or $e_n$. This means that not all $e_i$ translate into well-typed DCC terms $\target{e_i}$ in $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_n}} \sfpr \semicolon \target{\Gamma}$, which makes proofs by induction difficult. Moreover, preservation of reduction sequences is also a key lemma for showing type preservation, since CC's typing rules involve equivalence and the equivalence rule (Eq-reduce) is defined with reductions.
+Ideally, I could show this property by showing that the transformation preserves all small-step reductions $\Gamma \vdash e_1\ \triangleright\ e_2$, followed by an induction on the number of reduction steps in a sequence. However, CC's meta-language substitution $(\lam{x}{A}{e_1})\sub{e_2}{y}$ creates a new function definition when it substitutes an expression into a free variable of a function.
+So, for a reduction sequence $e_1\ \triangleright \cdots \ \triangleright\ e_n$ in CC, some $e_i$ may contain function definitions that are not exist in $e_1$ or $e_n$. This means that not all $e_i$ translate into well-typed DCC terms $\target{e_i}$ in $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_n}} \sfpr \semicolon \target{\Gamma}$, which makes proofs by induction difficult. Moreover, preservation of reduction sequences is a key lemma for showing type preservation, since CC's typing rules involve equivalence and the equivalence rule (Eq-reduce) is defined with reductions.
 
-Luckily, meta-theoretic substitution is the only source of creating new function definitions in CC's reduction sequences. This problem would not exist if the source language does not evaluate substitutions into functions but keeps them as primitive expressions instead. To use this observation formally, I define a helper language {\ccs}, which is an extension of CC with the following features:
-\begin{itemize}
-	\item Substitution is a part of its syntax instead of a meta-theoretic notion.
-	\item It does not evaluate substitutions of expressions into functions.
-\end{itemize}
+Fortunately, meta-theoretic substitution is the only source of creating new function definitions in CC's reduction sequences. There would be no problem if the source language does not evaluate substitutions into functions but keeps them as primitive expressions instead. To use this observation formally, I define a helper language {\ccs}, which is an extension of CC with explicit substitutions~\cite{DBLP:journals/jfp/AbadiCCL91}. In addition, this language does not reduce substitutions of expressions into functions.
 
-Since {\ccs} extends CC, every CC expression is trivially a {\ccs} expression. I denote the trivial transformation from CC to {\ccs} as $\sigma$, then I define the defunctionalization transformation from {\ccs} to DCC. Next, I show that these two transformations preserve reduction sequences and they commute with the transformation from CC into DCC. As a corollary, defunctionalization from CC to DCC preserves reduction sequences.
-
-{\ccs} is an extension of CC with new syntax, type derivation rules, reduction rules, and equivalence rules (Figure~\ref{fig: ccs}). I write {\ccs} expressions in a $\helper{teal, mathematical}$ $\helper{font}$ to avoid ambiguity. {\ccs} extends the CC syntax with \textit{syntactic substitutions} of the form $\helper{e_1\sub{e_2}{x}}$ -- note that this is not the usual meta-theoretic substitution, and I emphasised this by colouring the square brackets teal. 
+Since {\ccs} extends CC, every CC expression is trivially a {\ccs} expression. I denote this trivial transformation from CC to {\ccs} as $\sigma$. Then, I define the defunctionalization transformation from {\ccs} to DCC in a similar way as that from CC to DCC -- a term transformation $\hbracket{-}$ and a meta-function $\hbracketd{-}$ for extracting definitions. Next, I show that $\sigma$ and defunctionalization for {\ccs} preserve reduction sequences and they commute with the transformation from CC into DCC. As a corollary, defunctionalization from CC to DCC preserves reduction sequences. In other words, I show that the following diagram commutes for all CC-terms $e_1$ and $e_2$ (contexts omitted).
+\begin{equation}
+\label{the graph}
+\large
+% https://tikzcd.yichuanshen.de/#N4Igdg9gJgpgziAXAbVABwnAlgFyxMJZABgBpiBdUkANwEMAbAVxiRBgH0BGEAX1PSZc+QigBM5KrUYs2nMXwEgM2PASJkuU+s1aIQAHQPYA5gFs6ACk5cAlIsGqRRLqS3Uds-UYAWMBmgwAE7AMLwOykJqosgS7tK6bEamFtYcYvb8jsLqKGRi2jJ6hgY4dEEmMDih3OFZkU65yK4FHkVJpeWV1WERKjkxEq0JXiVlFVU1YnVSMFCVCCigAGZBEGZIZCA4EEgSI8XJWOZ0INQMdABG-gAKUc76DDDLOBGr65vUO0gArG2J3gMl0uQToAGMANaTAC04XOV1u91yICCxx8r2o1zAUCQ0IAzFs4D4sC82Ap6u8Nogtt9EK4Dh0cKi6GATE9USZ0QA9ABUZxAF2uDDujVEAuerwpayp9NpABZ-qMjid+YLEaK2Bz0W9pUhZbtEAB2RWHIEg8FQ6qw1UI4VIsVPUmYmDYpAE6hEkmvRDQ6ZKSl7L4GvEmxnM1nstE4Xk2oUigZsR2S-26xD7Wl-BmAnzmyEwuEC23x6KJiU6j6IEPbA0KrMlGAARyYWBosfVCceZalFdrtONdd8uctwGt8Lj9s1UfLVMztIAbKHAUysCy2cEozGx+2S53Sd2qQvq0h+55TY3m62t3aNbvkytU1X51fiw9xU66wAPPgUXhAA
+\begin{tikzcd}
+e_1 \arrow[d, "\sigma"] \arrow[dd, "\bbracket{-}"', bend right, shift right=2] \arrow[rr, "\triangleright^*"] &                                               & e_2 \arrow[d, "\sigma"'] \arrow[dd, "\bbracket{-}", bend left, shift left=2] \\
+\helper{e_1} \arrow[r, "\triangleright^*"] \arrow[d, "\hbracket{-}"]                                           & \helper{e} \arrow[r, "\equiv"] \arrow[d, "\hbracket{-}"] & \helper{e_2} \arrow[d, "\hbracket{-}"']                                       \\
+\target{e_1} \arrow[r, "\triangleright^*"]                                                                    & \target{e} \arrow[r, "\equiv"]                & \target{e_2}                                                                
+\end{tikzcd}
+\normalsize
+\vspace{0.5cm}
+\end{equation}
+{\ccs} is an extension of CC with new syntax, type derivation rules, reduction rules, and equivalence rules (Figure~\ref{fig: ccs}). I write {\ccs} expressions in a $\helper{teal, mathematical}$ $\helper{font}$ to avoid ambiguity. {\ccs} extends the CC syntax with \textit{syntactic substitutions} of the form $\helper{e_1\hsub{e_2}{x}}$. 
 
 % Type rules
-Type rules for variables, universes, $\Pi$-types, functions, and equivalence in {\ccs} are the same as the standard rules in CC, except that the type of an application $\helper{e_1} \ \helper{e_2}$ is $\helper{B\sub{e2}{x}}$ with the syntactic substitution, since there is no meta-language substitution in {\ccs}.
-The type of a substitution $\helper{e_1\sub{e_2}{x}}$ is the type of $\helper{e_1}$ with $\helper{x}$ substituted by $\helper{e_2}$ (\helper{Subst}). 
+Type rules for variables, universes, $\Pi$-types, functions, and equivalence in {\ccs} are the same as the standard rules in CC, except that the type of an application $\helper{e_1} \ \helper{e_2}$ is $\helper{B\hsub{e2}{x}}$ with the syntactic substitution.
+The type of a substitution $\helper{e_1\hsub{e_2}{x}}$ is the type of $\helper{e_1}$ with $\helper{x}$ substituted by $\helper{e_2}$ (\helper{Subst}). 
 
 % Reductions and equivalence
-{\ccs} has five more reduction rules about substitutions, which are the standard meta-theoretic substitution rules for variables, universes, $\Pi$-types, and applications being hard-coded into the language. Note that the substitution in the beta-reduction rule $(\helper{\lambda x} \goodcolon \helper{A} . \helper{e_1})\ \helper{e_2}\ \triangleright\ \helper{e_1\sub{e_2}{x}}$ is also the syntactic one. {\ccs} does not reduce substitutions into functions.
+{\ccs} has five rules (those prefixed with \helper{Sub-}) that reduce substitutions, which are the standard meta-theoretic substitution rules for variables, universes, $\Pi$-types, and applications being internalised into the language. Note that the meta-theoretic substitution in the CC's original beta-reduction rule $(\helper{\lambda x} \goodcolon \helper{A} . \helper{e_1})\ \helper{e_2}\ \triangleright\ \helper{e_1\hsub{e_2}{x}}$ is also replaced by the syntactic one. {\ccs} does not reduce substitutions into functions, but it $\beta$-reduces them when they are applied to arguments (\helper{Beta-Sub}). I write $\helper{e}\helper{\{x_1 \mapsto e_1, x_2 \mapsto e_2\}}$ for a substitution followed by another substitution $(\helper{e}\hsub{e_1}{x_1})\hsub{e_2}{x_2}$, and $\helper{e}\hsub{\bar{e}}{\bar{y}}$ for a sequence of substitutions
+$(((\helper{e}\hsub{e_1}{y_1})\hsub{y_2}{x_2}) \cdots )\hsub{e_n}{y_n}$.
 
-{\ccs} has the standard equivalence rules (\helper{Eq-eq}), (\helper{Eq-Eta1}), and (\helper{Eq-Eta2}), defined in the same way as those rules in are CC. Apart from that, it has two new symmetric rules (\helper{Eq-SubEta1}) and (\helper{Eq-SubEta2}) for determining when a substitution into a function 
-$(\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\sub{e'}{y}}$ 
-is equivalent to another expression. This is essentially a variant of the $\eta$-equivalence rules that is compatible with substitutions -- $(\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\sub{e'}{y}}$ is equivalent to $\helper{e_2}$ if applying $\helper{e_2}$ to $\helper{x}$ is equivalent to the function body $\helper{e}$ with $\helper{y}$ being substituted for $\helper{e'}$.
+{\ccs} has standard equivalence rules (\helper{Eq-reduce}), (\helper{Eq-Eta1}), and (\helper{Eq-Eta2}), defined in the same way as those rules in are CC. Apart from that, it has two new symmetric rules (\helper{Eq-SubEta1}) and (\helper{Eq-SubEta2}) for determining when a sequence of substitutions into a function 
+$(\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\hsub{\bar{e}}{\bar{y}}}$ 
+is equivalent to another expression. This is essentially a variant of the $\eta$-equivalence rules that is compatible with substitutions -- $(\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\hsub{\bar{e}}{\bar{y}}}$ is equivalent to $\helper{e_2}$ if applying $\helper{e_2}$ to $\helper{x}$ is equivalent to the function body $\helper{e}$ with $\helper{\bar{y}}$ being substituted for $\helper{\bar{e}}$.
 
 \begin{figure}
 \renewcommand{\arraystretch}{1.3}
 	\begin{equation*}
-		Expressions \quad ::= \quad \cdots\ |\ \helper{e_1\sub{e_2}{x}} 
+		Expressions \quad ::= \quad \cdots\ |\ \helper{e_1\hsub{e_2}{x}} 
 	\end{equation*}
 	\begin{equation}
 		\tag{\helper{Apply}}
 		\frac
 			{\helper{\Gamma} \vdash \helper{e_1} \goodcolon \helper{\Pi x} \goodcolon \helper{A}. \helper{B} \qquad 
 			\helper{\Gamma} \vdash \helper{e_2} \goodcolon \helper{A}}
-			{\helper{\Gamma} 	\vdash \helper{e_1} \ \helper{e_2} \goodcolon \helper{B\sub{e2}{x}}}
+			{\helper{\Gamma} 	\vdash \helper{e_1} \ \helper{e_2} \goodcolon \helper{B\hsub{e2}{x}}}
 	\end{equation}
 	\begin{equation}
 		\tag{\helper{Subst}}
 		\frac
 			{\helper{\Gamma}, \helper{x} \goodcolon \helper{A} \vdash \helper{e_1} \goodcolon \helper{B} \qquad 
 			 \helper{\Gamma} \vdash \helper{e_2} \goodcolon \helper{A}}
-			{\helper{\Gamma} \vdash \helper{e_1\sub{e_2}{x}} \goodcolon \helper{B\sub{e2}{x}}}
+			{\helper{\Gamma} \vdash \helper{e_1\hsub{e_2}{x}} \goodcolon \helper{B\hsub{e2}{x}}}
 	\end{equation}
 	\begin{align*}
-		(\helper{\lambda x} \goodcolon \helper{A} . \helper{e_1})\ \helper{e_2}\ &\triangleright\ \helper{e_1\sub{e_2}{x}}\\
-		\helper{x\sub{e}{y}}\ &\triangleright\ \helper{x}\\
-		\helper{x\sub{e}{x}}\ &\triangleright\ \helper{e}\\
-		\helper{U_i\sub{e}{x}}\ &\triangleright\ \helper{U_i}\\
-		(\helper{e_1\ e_2})\helper{\sub{e}{x}}\ &\triangleright\ (\helper{e_1\sub{e}{x}})\ (\helper{e_2\sub{e}{x}}) \\
-		(\helper{\Pi x} \goodcolon \helper{A}. \helper{B})\helper{\sub{e}{y}}\ &\triangleright\ 
-		\helper{\Pi x} \goodcolon \helper{A\sub{e}{y}}. \helper{B\sub{e}{y}}
+		\tag{\helper{Sub-Var1}}
+		\helper{x\hsub{e}{y}}\ &\triangleright\ \helper{x}\\
+		\tag{\helper{Sub-Var2}}
+		\helper{x\hsub{e}{x}}\ &\triangleright\ \helper{e}\\
+		\tag{\helper{Sub-Universe}}
+		\helper{U_i\hsub{e}{x}}\ &\triangleright\ \helper{U_i}\\
+		\tag{\helper{Sub-Apply}}
+		(\helper{e_1\ e_2})\helper{\hsub{e}{x}}\ &\triangleright\ (\helper{e_1\hsub{e}{x}})\ (\helper{e_2\hsub{e}{x}}) \\
+		\tag{\helper{Sub-Pi}}
+		(\helper{\Pi x} \goodcolon \helper{A}. \helper{B})\helper{\hsub{e}{y}}\ &\triangleright\ 
+		\helper{\Pi x} \goodcolon \helper{A\hsub{e}{y}}. \helper{B\hsub{e}{y}}\\
+		\tag{\helper{Beta}}
+		(\helper{\lambda x} \goodcolon \helper{A} . \helper{e_1})\ \helper{e_2}\ &\triangleright\ \helper{e_1\hsub{e_2}{x}}\\
+		\tag{\helper{Beta-Sub}}
+		((\helper{\lambda x} \goodcolon \helper{A} . \helper{e_1}) \hsub{\bar{e}}{\bar{y}})\ \helper{e_2}\ 
+		&\triangleright\ \helper{e_1}\helper{\{\bar{y} \mapsto \bar{e}, x \mapsto e_2\}}\\
 	\end{align*}
 	\begin{equation}
 		\tag{\helper{Eq-SubEta1}}
 		\qquad\qquad\qquad
 		\frac
 			{\begin{array}{l @{\qquad} l}
-			\helper{e_1} \triangleright^* (\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\sub{e'}{y}} &
+			\helper{e_1} \triangleright^* (\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\hsub{\bar{e}}{\bar{y}}} &
 			 \helper{e_2} \triangleright^* \helper{e_2'}\\
-			 \helper{\Gamma}, \helper{x} \goodcolon \helper{A} \vdash \helper{e\sub{e'}{y}} \equiv \helper{e_2'}\ \helper{x}
+			 \helper{\Gamma}, \helper{x} \goodcolon \helper{A}\hsub{\bar{e}}{\bar{y}} \vdash \helper{e\hsub{\bar{e}}{\bar{y}}} \equiv \helper{e_2'}\ \helper{x}
 			 \end{array}
 			 }
 			{\helper{\Gamma} \vdash \helper{e_1} \equiv \helper{e_2}}
@@ -91,9 +110,9 @@ is equivalent to another expression. This is essentially a variant of the $\eta$
 		\qquad\qquad\qquad
 		\frac
 			{\begin{array}{l @{\qquad} l}
-			 \helper{e_2} \triangleright^* (\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\sub{e'}{y}} &
+			 \helper{e_2} \triangleright^* (\helper{\lambda x} \goodcolon \helper{A} . \helper{e})\helper{\hsub{\bar{e}}{\bar{y}}} &
 			 \helper{e_1} \triangleright^* \helper{e_1'} \\
-			 \helper{\Gamma}, \helper{x} \goodcolon \helper{A} \vdash \helper{e_1'}\ \helper{x} \equiv \helper{e\sub{e'}{y}}
+			 \helper{\Gamma}, \helper{x} \goodcolon \helper{A}\hsub{\bar{e}}{\bar{y}} \vdash \helper{e_1'}\ \helper{x} \equiv \helper{e\hsub{\bar{e}}{\bar{y}}}
 			 \end{array}
 			 }
 			{\helper{\Gamma} \vdash \helper{e_1} \equiv \helper{e_2}}
@@ -111,7 +130,7 @@ Now, I define the defunctionalization transformation from {\ccs} to DCC, which i
 		 \helper{\Gamma} \vdash \helper{e_2} \goodcolon \helper{A}\ \helper{\leadsto}\ \target{e_2}
 		}
 		{
-		 \helper{\Gamma} \vdash \helper{e_1\sub{e_2}{x}} \goodcolon \helper{B\sub{e2}{x}}\ \helper{\leadsto}\
+		 \helper{\Gamma} \vdash \helper{e_1\hsub{e_2}{x}} \goodcolon \helper{B\hsub{e2}{x}}\ \helper{\leadsto}\
 		 \target{e_1}\targetsub{e_2}{x}
 		}
 \end{equation}
@@ -123,36 +142,39 @@ Now, I define the defunctionalization transformation from {\ccs} to DCC, which i
 		 \helper{\Gamma} \vdash \helper{e_2} \goodcolon \helper{A}\ \helper{\leadsto_d}\ \target{\fdef_2}
 		}
 		{
-		 \helper{\Gamma} \vdash \helper{e_1\sub{e_2}{x}} \goodcolon \helper{B\sub{e2}{x}}\ \helper{\leadsto_d}\
+		 \helper{\Gamma} \vdash \helper{e_1\hsub{e_2}{x}} \goodcolon \helper{B\hsub{e2}{x}}\ \helper{\leadsto_d}\
 		 \target{\fdef_{1}} \cup \target{\fdef_2}
 		}
 \end{equation}
 
-The transformation turns a syntactic substitution in {\ccs} into a meta-theoretic substitution in DCC (\helper{T-Subst}); the function definitions in a substitution $\helper{e_1\sub{e_2}{x}}$ are the union of the definitions in $\helper{e_1}$ and $\helper{e_2}$ (\helper{D-Subst}). 
+The transformation turns a syntactic substitution in {\ccs} into a meta-theoretic substitution in DCC (\helper{T-Subst}); the function definitions in a substitution $\helper{e_1\hsub{e_2}{x}}$ are the union of the definitions in $\helper{e_1}$ and $\helper{e_2}$ (\helper{D-Subst}). 
 Since substitutions into functions do not reduce in {\ccs}, the transformation from it into DCC have the following strong properties by definition, which are not true for the transformation from CC into DCC.
 \begin{align}
-	\helper{\Gamma} \vdash \helper{e_1}\ \triangleright^* \helper{e_2}\ \Longrightarrow\ \helper{\bbracket{e_2}_d} \subseteq\ \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d}
-	\label{reduction def}\\
-	\hbracket{\helper{e_1\sub{e_2}{x}}} = \hbracket{\helper{e_1}}\sub{\hbracket{\helper{e_2}}}{\target{x}}.
+	\label{reduction def}
+	\helper{\Gamma} \vdash \helper{e_1}\ \triangleright^* \helper{e_2}\ \Longrightarrow\ \helper{\bbracket{e_2}_d} \subseteq\ \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d}\\
 	\label{ccs substitution}
+	\hbracket{\helper{e_1\hsub{e_2}{x}}} = \hbracket{\helper{e_1}}\sub{\hbracket{\helper{e_2}}}{\target{x}}.
 \end{align}
 
 Next, I show that the transformation preserves small step reductions in {\ccs} -- if a {\ccs} program $\helper{e_1}$ reduces to $\helper{e_2}$ in one step, then the translated program $\target{e_1}$ evaluates to $\target{e_2}$ in a sequence.
 \begin{lemma}[Preservation of small step reductions] If $\helper{\Gamma} \vdash \helper{e_1}\ \triangleright \helper{e_2}$, then
 $\helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d} \semicolon \target{\Gamma} \vdash \target{e_1}\ \triangleright^* \target{e_2}$.
-\paragraph{Proof.} This can by proved by an induction on the reduction rules of {\ccs}. All cases are trivial except for the $\beta$-reduction rule 
-$(\helper{\lambda^i x} \goodcolon \helper{A} . \helper{e_1})\ \helper{e_2}\ \triangleright\ \helper{e_1\sub{e_2}{x}}$.
-In this case, my goal is to show that 
+\begin{proof}
+By induction on the reduction rules of {\ccs}. All cases are trivial except for the two $\beta$-reduction rules. In case (\helper{Beta}), the assumption is 
+$(\helper{\lambda^i x} \goodcolon \helper{A} . \helper{e_1})\ \helper{e_2}\ \triangleright\ \helper{e_1\hsub{e_2}{x}}$, and the goal is to show that 
 $\target{\fdef} \semicolon \target{\Gamma} \vdash
 \target{Apply}\ \targetlab{\flabel_i}{\bar{x}}\ \target{e_2}\ \triangleright^* \ \target{e_1}\targetsub{e_2}{x}$, where
-$\target{\fdef} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d}$ and $\target{\bar{x}}$ corresponds to the free variables in $\helper{\lambda^i}$. By definition, I also have
+$\target{\fdef} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d}$ and $\target{\bar{x}}$ corresponds to the free variables in $\helper{\lambda^i}$. By definition of $\hbracketd{-}$, we have
 $\itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\_}}{\_}{\target{e_1}} \in \target{\fdef}$ (ignoring type information).
-Therefore, 
+So, 
 $\target{\fdef} \semicolon \target{\Gamma} \vdash
-\target{Apply}\ \targetlab{\flabel_i}{\bar{x}}\ \target{e_2}\ \triangleright \ 
+\target{Apply}\ \targetlab{\flabel_i}{\bar{x}}\ \target{e_2}\ \triangleright$
+$ 
 \target{e_1}[\target{\bar{x}}\slash\target{\bar{x}}\sfcomma\target{e_2}\slash\target{x}]
 = \target{e_1}\targetsub{e_2}{x}
-$. \qed
+$.
+Rule (\helper{Beta-Sub}) follows similarly.
+\end{proof}
 \end{lemma}
 
 The transformation preserves sequences of reductions, and the proof follows from a trivial induction on the number of small steps in the sequence.
@@ -165,25 +187,28 @@ $\helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d} \semicolon \target{
 
 The transformation is also coherent, i.e.~it preserves the equivalence relation in {\ccs}.
 
-\begin{lemma}[Coherence ({\ccs})] If $\helper{\Gamma} \vdash \helper{e_1} \equiv \helper{e_2}$, then 
+\begin{lemma}[Coherence ({\ccs})]
+\label{lem:ccs coherence}
+If $\helper{\Gamma} \vdash \helper{e_1} \equiv \helper{e_2}$, then 
 $\target{\fdef} \semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}$, where
 $\target{\fdef} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d} \cup \helper{\bbracket{e_2}_d}$.
-\paragraph{Proof.} This is proved by induction on the equivalence rules of {\ccs}, and I only show for case (\helper{Eq-Eta1}). Case (\helper{Eq-SubEta1}) follows from similar (and more tedious) proof steps as case (\helper{Eq-Eta1}), and cases (\helper{Eq-Eta2}) and (\helper{Eq-SubEta2}) are true by symmetry. Case (\helper{Eq-eq}) follows directly from the preservation of reduction sequences.
+\begin{proof}
+By induction on the equivalence rules of {\ccs}. Only the proof steps for the case (\helper{Eq-Eta1}) are shown. Case (\helper{Eq-SubEta1}) follows from similar (and more tedious) proof steps as case (\helper{Eq-Eta1}), and cases (\helper{Eq-Eta2}) and (\helper{Eq-SubEta2}) are true by symmetry. Case (\helper{Eq-reduce}) follows directly from the preservation of reduction sequences.
 
 If $\helper{\Gamma} \vdash \helper{e_1} \equiv \helper{e_2}$ by (\helper{Eq-Eta1}) in {\ccs}, then 
 $\helper{e_1} \triangleright^* (\helper{\lambda^i x} \goodcolon \helper{A} . \helper{e})$, 
 $\helper{e_2} \triangleright^* \helper{e_2'}$, 
 and $\helper{\Gamma}, \helper{x \goodcolon A} \vdash \helper{e} \equiv \helper{e_2'\ x}$. 
-By Lemma~\ref{lem:ccs prev sequence}, I have 
+By Lemma~\ref{lem:ccs prev sequence}, we have 
 $\target{\fdef_1} \semicolon \target{\Gamma} \vdash \target{e_1}\ \triangleright^* \targetlab{\flabel_i}{\bar{x}}$ and
 $\target{\fdef_2} \semicolon \target{\Gamma} \vdash \target{e_2}\ \triangleright^* \target{e_2'}$, where 
 $\target{\fdef_1} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d}$,
 $\itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\_}}{\_}{\target{e}} \in \target{\fdef_1}$ (ignoring type information), and
 $\target{\fdef_2} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_2}_d}$. 
-By the induction hypothesis, I have
+By the induction hypothesis,
 $\target{\fdef_3} \semicolon \target{\Gamma} \sfcomma \itemtype{x}{A} \vdash \target{e} \equiv \targetapp{e_2'}{x}$, where
-$\target{\fdef_3} = \hbracketd{\helper{\Gamma}, \helper{x} \goodcolon \helper{A}} \cup \helper{\bbracket{e}_d} \cup \helper{\bbracket{e_2'}_d}$. My goal is to show
-$\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}$ by using DCC's (Eq-Eta1) rule (shown below).
+$\target{\fdef_3} = \hbracketd{\helper{\Gamma}, \helper{x} \goodcolon \helper{A}} \cup \helper{\bbracket{e}_d} \cup \helper{\bbracket{e_2'}_d}$. The goal in this case is to show
+$\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}$ by using DCC's (\targettext{Eq-Eta1}) rule (shown below).
 \begin{equation*}
 	\frac
 		{\begin{array}{l}
@@ -195,60 +220,69 @@ $\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2
     	\end{array}}
 		{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}}
 \end{equation*}
-I already have all the premises $\target{e_1}\ \triangleright^* \targetlab{\flabel_i}{\bar{x}}$, etc., but they are not judged in the desired label context $\target{\fdef} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d} \cup \helper{\bbracket{e_2}_d}$. I only need to show that $\target{\fdef_1}$, $\target{\fdef_2}$, and $\target{\fdef_3}$ are subsets of $\target{\fdef}$ and to apply the weakening theorem. $\target{\fdef_1}$ and $\target{\fdef_2}$ are clearly subsets of $\target{\fdef}$. I have
+We already have all the premises like $\target{e_1}\ \triangleright^* \targetlab{\flabel_i}{\bar{x}}$, etc., but they are not judged in the desired label context $\target{\fdef} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d} \cup \helper{\bbracket{e_2}_d}$. We only need to show that $\target{\fdef_1}$, $\target{\fdef_2}$, and $\target{\fdef_3}$ are subsets of $\target{\fdef}$ and to apply the weakening theorem. $\target{\fdef_1}$ and $\target{\fdef_2}$ are clearly subsets of $\target{\fdef}$, and
 $\target{\fdef_3} = \hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{A}} \cup \helper{\bbracket{e}_d} \cup \helper{\bbracket{e_2'}_d}$ since $\hbracketd{-}$ acts pointwise on contexts. Also, 
 \begin{align*}
 	\hbracketd{\helper{A}} \cup \helper{\bbracket{e}_d} &\subseteq \hbracketd{(\helper{\lambda^i x} \goodcolon \helper{A} . \helper{e})} \text{ by def.}\\
-	&\subseteq \hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}} \text{ by (\eqref{reduction def})},
+	&\subseteq \hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}} \text{ by \eqref{reduction def}},
 \end{align*}
-and $\hbracketd{\helper{e_2'}} \subseteq \hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_2}}$ by (\eqref{reduction def}). Therefore, $\target{\fdef_3}$ is also a subset of $\target{\fdef}$. \qed
-\label{lem:ccs coherence}
+and $\hbracketd{\helper{e_2'}} \subseteq \hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_2}}$ by \eqref{reduction def}. Therefore, $\target{\fdef_3}$ is also a subset of $\target{\fdef}$.
+\end{proof}
 \end{lemma}
 
-I use $\sigma$ to denote the trivial transformation from CC to {\ccs}. This trivial transformation commutes with defunctionalization, i.e.
+I use $\sigma$ to denote the trivial transformation from CC to {\ccs}. This trivial transformation commutes with the two term transformations by definition.
 \begin{equation}
 \hbracket{\sigma(e)} = \bbracket{e}
 \label{eq:commute}
 \end{equation}
-for all $e$ by definition. In addition, 
+In addition, function definitions in $\hbracketd{\sigma(e)}$ is a subset of the definitions in $\bbracket{e}_d$, because new function definitions appear in CC's type derivation trees as results of substitutions, but this does not happen in {\ccs}. 
 \begin{equation}
-\hbracket{\sigma(e)}_d \subseteq \bbracket{e}_d
+\hbracketd{\sigma(e)} \subseteq \bbracket{e}_d
 \label{eq:commute_d}
 \end{equation}
-because new function definitions appear in CC's type derivation trees as results of substitutions, but this does not happen in {\ccs}.  I show that it $\sigma$ also preserves sequences of reductions. As a convention, I write $\helper{e}$ for $\sigma(e)$ when there is no ambiguity.
-\begin{lemma}[Preservation of reduction sequences ($\sigma$)] If $\Gamma \vdash e_1\ \triangleright^* e_2$, then
-$\helper{\Gamma} \vdash \helper{e_1}\ \triangleright^* \helper{e} \text{ where } \helper{\Gamma} \vdash \helper{e} \equiv \helper{e_2}$.
-\paragraph{Proof.} Firstly, if $\Gamma, x \goodcolon A \vdash e_1 \goodcolon B$ and $\Gamma \vdash e_2 \goodcolon A$, then
-$\helper{\Gamma} \vdash \sigma(e_1\sub{e_2}{x}) \equiv \helper{e_1\sub{e_2}{x}}$. This can be proved by induction on the syntax structure of $e_1$, and all cases are trivial.
-
-Therefore, I have $(\helper{\lambda x} \goodcolon \helper{A}. \helper{e_1})\ \helper{e_2}\ \triangleright 
-\helper{e_1\sub{e_2}{x}} \equiv \sigma(e_1\sub{e_2}{x})$, so $\sigma$ preserves small step reductions. Again, the preservation of reduction sequences follows immediately from this. \qed 
+I show that $\sigma$ also preserves sequences of reductions. As a convention, I write $\helper{e}$ for $\sigma(e)$ when there is no ambiguity.
+\begin{lemma}[Preservation of reduction sequences ($\sigma$)]
 \label{lem:sigma prev sequence}
+If $\Gamma \vdash e_1\ \triangleright^* e_2$, then
+$\helper{\Gamma} \vdash \helper{e_1}\ \triangleright^* \helper{e} \text{ where } \helper{\Gamma} \vdash \helper{e} \equiv \helper{e_2}$.
+\begin{proof}
+Firstly, if $\Gamma, x \goodcolon A \vdash e_1 \goodcolon B$ and $\Gamma \vdash e_2 \goodcolon A$, then
+$\helper{\Gamma} \vdash \sigma(e_1\sub{e_2}{x}) \equiv \helper{e_1\hsub{e_2}{x}}$. This can be proved by induction on the type derivations of $e_1$, and all cases are trivial.
+
+Therefore, we have $(\helper{\lambda x} \goodcolon \helper{A}. \helper{e_1})\ \helper{e_2}\ \triangleright\ 
+\helper{e_1\hsub{e_2}{x}} \equiv \sigma(e_1\sub{e_2}{x})$, so $\sigma$ preserves small step reductions. Again, the preservation of reduction sequences follows immediately from this.
+\end{proof}
 \end{lemma}
 
-I can finally prove the preservation of reduction sequences for dependently typed defunctionalization (from CC to DCC) using the lemmas above. 
+I can finally prove the preservation of reduction sequences for dependently typed defunctionalization (from CC to DCC) using the lemmas above.
 
-\begin{lemma}[Preservation of reduction sequences]For all $e_1$ and $e_2$, $\Gamma \vdash e_1\ \triangleright^* e_2$ implies that
+\begin{lemma}[Preservation of reduction sequences]
+\label{lem:prev sequence}
+For all $e_1$ and $e_2$, $\Gamma \vdash e_1\ \triangleright^* e_2$ implies that
 \begin{align}
 \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr \semicolon \target{\Gamma} &\vdash
 \target{e_1} \triangleright^* \target{e},\\
 \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr \semicolon \target{\Gamma} &\vdash\target{e} \equiv \target{e_2}
 \end{align}
-, where
+for some $\target{e}$ where
 $(\target{\fdef_{\Gamma}}, \target{\fdef_{e_1}}, \target{\fdef_{e_2}})$ = 
 $(\bbracket{\Gamma}_d, \bbracket{e_1}_d, \bbracket{e_2}_d)$ and 
 $(\target{\Gamma}, \target{e_1}, \target{e_2})$ = 
 $(\bbracket{\Gamma}, \bbracket{e_1}, \bbracket{e_2})$
 .
-\paragraph{Proof.} Suppose that $\Gamma \vdash e_1\ \triangleright^* e_2$. Then, I have 
+\begin{proof}
+Suppose that $\Gamma \vdash e_1\ \triangleright^* e_2$. Then, we have 
 $\helper{\Gamma} \vdash \helper{e_1}\ \triangleright^* \helper{e} \text{ and } \helper{\Gamma} \vdash \helper{e} \equiv \helper{e_2}$ for some $\helper{e}$, since $\sigma$ preserves reduction sequences. By Lemma~\ref{lem:ccs prev sequence} and Lemma~\ref{lem:ccs coherence}, 
 \begin{align*}
 (\hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}}) \semicolon \target{\Gamma} &\vdash
 \target{e_1} \triangleright^* \target{e}\\
 (\hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}} \cup \hbracketd{\helper{e_2}}) \semicolon \target{\Gamma} &\vdash \target{e} \equiv \target{e_2}.
 \end{align*}
-Finally, since $(\hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}})$ and $(\hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}} \cup \hbracketd{\helper{e_2}})$ are both subsets of $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr$, I have (5.3) and (5.4) by weakening. \qed
-\label{lem:prev sequence}
+Finally, since $(\hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}})$ and $(\hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}} \cup \hbracketd{\helper{e_2}})$ are both subsets of $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr$, we have 
+$\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr \semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \target{e}$ and 
+$\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \sfpr \semicolon \target{\Gamma} \vdash\target{e} \equiv \target{e_2}$ 
+by weakening.
+\end{proof}
 \end{lemma}
 
 Since ground types and values do not contain functions, $\bbracket{v}_d = \target{\cdot}$, and the correctness of the transformation is just a special case of Lemma~\ref{lem:prev sequence}.

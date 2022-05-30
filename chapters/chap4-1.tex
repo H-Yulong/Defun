@@ -1,24 +1,25 @@
 % !TEX root = ../main.tex
 
 \section{Main ideas}
+\label{sec:4.1}
 
-Abstractly speaking, defunctionalization is a transformation that eliminates functions by replacing them with a special kind of first-class values, which I refer to as \textit{labels}. Each source-program function uniquely corresponds to a label in the target program. 
+Abstractly speaking, defunctionalization is a transformation that eliminates functions by replacing them with a special kind of first-class value, which I refer to as \textit{labels}. Each source-program function uniquely corresponds to a label in the target program. 
 A label carries a list of values assigned to its corresponding function's free variables, similar to a function closure with the closure environment. 
 The transformation turns applications of functions to arguments into applications of labels to (transformed) arguments, and it provides a mechanism for evaluating label applications.
 
-Concretely, the polymorphic defunctionalization in OCaml uses constructors of a generalized abstract data type (GADT) \texttt{lam} as labels, and the mechanism for evaluating label applications is an auxiliary \textit{apply} function. Chapter 3 discussed an attempt of adapting this method to the dependently-typed world using inductive families (the counterpart of GADTs in dependently-typed languages) as labels. 
+Concretely, Pottier and Gauthier's polymorphic defunctionalization uses constructors of a generalized abstract data type (GADT) as labels, and the mechanism for evaluating label applications is an auxiliary \textit{apply} function. Chapter 3 discussed an attempt of adapting this method to the dependently-typed world using inductive families (the counterpart of GADTs in dependently-typed languages) as labels. 
 This turned out to be a failure, because constructors of inductive families cannot accept arguments from universes higher than the universe of the inductive definition, but functions could contain free variables from arbitrarily high universes.
 
-One alternative approach is to design a target language with a primitive notion of labels that fits the abstract description of defunctionalization. Defining abstract transformations with specialized target languages is a common approach in the literature. For example, Minamide et al.~presented a type-preserving closure conversion from the simply-typed lambda calculus to a typed intermediate language with closures as first-class values~\cite{DBLP:conf/popl/MinamideMH96}. They named this method \textit{abstract closure conversion}, and Bowman et al.~adapted it to dependently-typed closure conversion~\cite{DBLP:conf/pldi/BowmanA18}. 
+One alternative approach is to design a target language with a primitive notion of labels that fits the abstract description of defunctionalization. Defining abstract transformations with specialized target languages is a common approach in the literature. For example, Minamide et al.~presented a type-preserving closure conversion from the simply-typed lambda calculus to a typed intermediate language with closures as first-class values~\cite{DBLP:conf/popl/MinamideMH96}. They named this method \textit{abstract closure conversion}, and Bowman and Ahmed adapted it to dependently-typed closure conversion~\cite{DBLP:conf/pldi/BowmanA18}. 
 
-Abstract defunctionalization took inspiration from works of Minamide et al. and Bowman et al. It consists of a target language, the Defunctionalized Calculus of Constructions (DCC), and a type-preserving transformation from CC into it. 
-Before formally presenting DCC's syntax and type judgements, I give an informal explaination of its key features and the intuition behind. I write DCC expressions in a \color{blue!95!white}{\textsf{san-serif blue font}} \color{black} to distinguish them from source language expressions.
+Abstract defunctionalization takes inspiration from works of Minamide et al. and Bowman and Ahmed. It consists of a target language, the Defunctionalized Calculus of Constructions (DCC), and a type-preserving transformation from CC into it. 
+Before formally presenting DCC's syntax and type judgements, I give an informal explaination of its key features and the intuition behind them. I write DCC expressions in a \color{blue!95!white}{\textsf{san-serif blue font}} \color{black} to distinguish them from the source language expressions.
 
-DCC is a language similar to CC, except that its syntax contains first-class function labels instead of lambda abstractions. The syntax of a label $\target{\flabel}\{\target{e_1} \sfcomma \cdots \sfcomma \target{e_n}\}$ consists of a label name ($\target{\flabel}$) and a list of free-variable values it carries ($\{\target{e_1} \sfcomma \cdots \sfcomma \target{e_n}\}$). DCC also provides label contexts as the mechanism for evaluating label applications. These contexts contain elements in the following form.
+DCC is a language similar to CC, except that its syntax contains first-class function labels instead of lambda abstractions. The syntax of a label $\target{\flabel}\{\target{e_1} \sfcomma \cdots \sfcomma \target{e_n}\}$ consists of a label name ($\target{\flabel}$) and a list of free-variable terms it carries ($\{\target{e_1} \sfcomma \cdots \sfcomma \target{e_n}\}$). DCC also provides label contexts as the mechanism for evaluating label applications. These contexts contain elements in the following form.
 \begin{equation*}
 	\itemdef{\target{\flabel}}{\itemtype{x_1}{A_1} \sfcomma \cdots \sfcomma \itemtype{x_n}{A_n}}{\targetpi{x}{A}{B}}{\target{e}}
 \end{equation*}
-If $\target{\flabel}$ corresponds to a function $f$ in the source language, then $\{\itemtype{\bar{x}}{\bar{A}}\}$, $\targetpi{x}{A}{B}$, and $\target{e}$ correspond to the types of free variables in $f$, $f$'s type, and $f$'s body respectively. Applying a label to an argument evaluates to $\target{e}$ with all the free-variable values substituted in.
+If $\target{\flabel}$ corresponds to a function $f$ in the source language, then $\{\itemtype{\bar{x}}{\bar{A}}\}$, $\targetpi{x}{A}{B}$, and $\target{e}$ correspond to the types of free variables in $f$, $f$'s type, and $f$'s body respectively. Applying a label to an argument evaluates to $\target{e}$ with all the free-variable terms substituted in.
 
 For example, the label context associated with the defunctionalized natural-number addition function 
 $\lam{x}{Nat}{(\lam{y}{Nat}{x + y})}$ is the following.
@@ -29,7 +30,7 @@ $\lam{x}{Nat}{(\lam{y}{Nat}{x + y})}$ is the following.
 	{\targetlab{\flabel_1}{x}}
 \end{align*}
 
-Informally, this label context says that $\target{\flabel_0}$ corresponds to a function that takes no free variables and has the type $\pitype{x}{Nat}{\pitype{y}{Nat}{Nat}}$. Given an input $x$, it returns another function whose free variable is assigned with the value of $x$. The interpretation for $\target{\flabel_1}$ is similar.
+Informally, this label context says that $\target{\flabel_0}$ corresponds to a function that has no free variables and has the type $\pitype{x}{Nat}{\pitype{y}{Nat}{Nat}}$. Given an input $x$, it returns another function whose free variable is assigned with the value of $x$. The interpretation for $\target{\flabel_1}$ is similar.
 
 The reader might find the resemblance between DCC and defunctionalized programs in OCaml. Intuitively, a label term $\target{\flabel}\{\target{e_1} \sfcomma \cdots \sfcomma \target{e_n}\}$ is just like a constructor and all the arguments it takes (\texttt{Fun e1} \codemath{\cdots} \texttt{en}), and the label context is like the pattern-matching cases of the \texttt{apply} function. The difference is that a function's type, the types of its free variables, and the function body are encoded implictly in the type of \texttt{Fun} and the definition of \texttt{apply}, whereas DCC places them explicitly in the label context. 
 

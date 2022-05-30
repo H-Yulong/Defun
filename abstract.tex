@@ -2,10 +2,14 @@
 {\Huge \bf Abstract}
 \vspace{24pt} 
 
+% Dependent types are widely used to verify the correctness of large-scale programs since they can express program specifications through their type systems. Compilers should preserve specifications by performing type-preserving compilations, so checking the correctness of separately compiled and linked programs becomes possible. The current challenge is adapting non-dependent compiler transformations to dependently typed systems.
 
-Write a summary of the whole thing. Make 
-sure it fits in one page. 
+% A modern trend is for intermediate languages to be typed, and compiler correctness is [partially] addressed by requiring transformations to be type-preserving
+% Ah but type-preserving in compilers is usually w.r.t. to classical types, and you want to extend it to dependent types
+
+This dissertation studies \textit{defunctionalization}, a program transformation that turns a higher-order functional program into a first-order one. Type-preserving defunctionalization for simply-typed and polymorphic systems is well-studied in the literature, and my work extends defunctionalization further to dependently-typed systems.
+
+I illustrate that Pottier and Gauthier's polymorphic defunctionalization does not extend to dependently-typed languages. Then, I present \textit{abstract defunctionalization} as an alternative approach. Abstract defunctionalization consists of a target language with a primitive notion of function labels that fits the abstract description of defunctionalization, and a transformation from the source language to the target language. I prove the transformation type-preserving and correct, and I show that the target language is type-safe and consistent. An interpreter of the target language and the transformation are implemented in OCaml.
 
 
 \newpage
-\vspace*{\fill}

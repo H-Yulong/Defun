@@ -1,14 +1,15 @@
 % !TEX root = ../main.tex
 
-\section{Defunctionalized Calculus of\\Constructions (DCC)}
+\section{Defunctionalized Calculus of Constructions (DCC)}
+\label{sec:4.2}
 
-This section presents the formal definition of Defunctionalized Calculus of Constructions.
+This section presents the formal definition of the Defunctionalized Calculus of Constructions.
 
 \subsection{Syntax}
 DCC is a language similar to CC, except that its syntax (Figure~\ref{fig:dcc syntax}) contains first-class function labels instead of lambda abstractions.
-DCC has an infinite hierarchy of predicative universes $\target{U_i}$, and its term expressions are: variables $\target{x}$ (from an infinite set of variable names), universes $\target{U}$, $\Pi$-types $\targetpi{x}{A}{B}$, applications $\targetapp{e_1}{e_2}$, and labels $\targetlab{\flabel}{\bar{e}}$. I omit ground types for simplicity. Except for labels, all term expressions in DCC are the same as their counterparts in CC (written down in a different way).
+DCC has an infinite hierarchy of predicative universes $\target{U_i}$, and its term expressions are: variables $\target{x}$ (from an infinite set of variable names), universes $\target{U}$, $\Pi$-types $\targetpi{x}{A}{B}$, applications $\targetapp{e_1}{e_2}$, and labels $\targetlab{\flabel}{\bar{e}}$. I omit base types for simplicity. Except for labels, all term expressions in DCC are the same as their counterparts in CC (only written down in a different way).
 
-A label expression $\targetlab{\flabel}{\bar{e}}$ is a label name $\target{\flabel}$ supplied with a list of free-variables values $\target{e_1}, \cdots, \target{e_n}$. Labels can take zero free variable, but a label name by itself is not a term. In other words, $\target{\flabel}$ is not a term, but $\targetlab{\flabel}{}$ is. I write $\target{\bar{e}}$ as an abbreviation of a list of zero or more expressions. Label names $\target{\flabel_1}, \target{\flabel_2}, \cdots$ come from an infinite set of names which is disjoint to the set of variable names, and I write labels in a different font from variables to emphasise this.
+A label expression $\targetlab{\flabel}{\bar{e}}$ is a label name $\target{\flabel}$ supplied with a list of terms $\target{e_1}, \cdots, \target{e_n}$ assigned to its free variables. Labels can take zero free variables, but a label name by itself is not a term. In other words, $\target{\flabel}$ is not a term, but $\targetlab{\flabel}{}$ is. I write $\target{\bar{e}}$ as an abbreviation of a list of zero or more expressions. Label names $\target{\flabel_1}, \target{\flabel_2}, \cdots$ come from an infinite set of names which is disjoint to the set of variable names, and I write labels in a different font from variables to emphasise this.
 
 A DCC context $\targetcon$ consists of a context $\target{\Gamma}$ for types and a context $\target{\fdef}$ for label definitions. The type context is a list of variable-expression pairs. The label context is a list of label names $\target{\flabel}$ and their associated data 
 $\textsf{(}\{\itemtype{\bar{x}}{\bar{A}}\}\textsf{,}\ \targetpi{x}{A}{B} \textsf{,}\ \target{e} \textsf{)}$. 
@@ -47,7 +48,7 @@ where $\target{\bar{e}}\targetsub{e}{x}$ is a syntactic sugar for $\target{e_1}\
 
 % Type judgement
 DCC's type judgements are of the form $\targetcon \vdash \itemtype{e}{A}$, and
-typing rules are given in Figure~\ref{fig:dcc typing}. Rules for variables, universes, $\Pi$-types, applications, and conversion are identical to their counterpart rules in CC, so I focus on the rule for labels. A label term $\targetlab{\flabel}{\bar{e}}$ is well-typed in $\targetcon$ if they satisfy the following conditions.
+typing rules are given in Figure~\ref{fig:dcc typing}. Rules for variables, universes, $\Pi$-types, applications, and conversion are identical to their counterpart rules in CC, so I focus on the rule for labels. A label term $\targetlab{\flabel}{\bar{e}}$ is well-typed in $\targetcon$ the following conditions are satisfied.
 \begin{enumerate}
 	\item The context $\targetcon$ is \textit{well-formed}.
 	\item Label $\target{\flabel}$ is present in $\target{\fdef}$ and it associates with 
@@ -66,20 +67,22 @@ Each $\target{A_{i+1}}$ depends on $\target{x_1}, \cdots, \target{x_i}$, so $\ta
 \begin{equation*}
 \target{Pi}\textsf{(}\target{x}\textsf{,} \target{A} \targetsub{\bar{e}}{\bar{x}}\textsf{,} \target{B} \targetsub{\bar{e}}{\bar{x}}\textsf{)}.
 \end{equation*}
-Note that values of free variables $\target{\bar{e}}$ are substituted in $\targetpi{x}{A}{B}$, the specified type of the label. I use $\targetsub{\bar{e}}{\bar{x}}$ is a syntactic sugar of $[\target{e_1}\slash\target{x_1}\sfcomma \cdots\sfcomma \target{e_n}\slash\target{x_n}]$, and conditions (3) and (4) are abbreviated to $\targetcon \vdash \itemtype{\bar{e}}{\bar{A}}$ as a convention.
+Note that values of free variables $\target{\bar{e}}$ are substituted in $\targetpi{x}{A}{B}$, the specified type of the label. I use $\targetsub{\bar{e}}{\bar{x}}$ as a syntactic sugar of $[\target{e_1}\slash\target{x_1}\sfcomma \cdots\sfcomma \target{e_n}\slash\target{x_n}]$, and conditions (3) and (4) are abbreviated to $\targetcon \vdash \itemtype{\bar{e}}{\bar{A}}$ as a convention.
 
 % Well-formed context
-The DCC judgement for well-formed contexts is $\vdash \targetcon$ and the judgement for well-formed label contexts is $\vdash \target{\fdef}$. Their derivation rules are given in Figure~\ref{fig:dcc context}. A well-formed label context with an empty type context is a well-formed DCC context (WF-Empty). 
-If $\targetcon$ is well-formed and $\target{A}$ is a valid type in it, then $\target{\fdef} \semicolon \target{\Gamma} \sfcomma \itemtype{x}{A}$ is also well-formed (WF-Type). 
+The DCC judgement for well-formed contexts is $\vdash \targetcon$ and the judgement for well-formed label contexts is $\vdash \target{\fdef}$. Their derivation rules are given in Figure~\ref{fig:dcc context}. A well-formed label context with an empty type context is a well-formed DCC context (\targettext{WF-Empty}). 
+If $\targetcon$ is well-formed and $\target{A}$ is a valid type in it, then $\target{\fdef} \semicolon \target{\Gamma} \sfcomma \itemtype{x}{A}$ is also well-formed (\targettext{WF-Type}). 
 
 % Well-formed label context
-For label contexts, the empty context is well-formed (WFL-Empty). A label context extended with a new entry $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$ is well-formed if $\targetpi{x}{A}{B}$ is a valid type in $\target{\fdef} \semicolon \target{\Gamma_{fv}}$ and the type of $\target{e}$ is $\target{B}$ in $\target{\fdef} \semicolon \target{\Gamma_{fv}} \sfcomma \itemtype{x}{A}$ (WFL-Label). Here, $\target{\Gamma_{fv}}$ is the \textit{free-variable type context} formed by the label's free variables, defined as $\target{\Gamma_{fv}} = \target{\cdot} \sfcomma \itemtype{\bar{x}}{\bar{A}}$. Both the type context and the label context have the weakening property -- a well-typed term is still well-typed in a extended type or label context.
+For label contexts, the empty context is well-formed (\targettext{WFL-Empty}). A label context extended with a new entry $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$ is well-formed if $\target{\flabel}$ is not present in $\target{\fdef}$, $\targetpi{x}{A}{B}$ is a valid type in $\target{\fdef} \semicolon \target{\Gamma_{fv}}$, and the type of $\target{e}$ is $\target{B}$ in $\target{\fdef} \semicolon \target{\Gamma_{fv}} \sfcomma \itemtype{x}{A}$ (\targettext{WFL-Label}). Here, $\target{\Gamma_{fv}}$ is the \textit{free-variable type context} formed by the label's free variables, defined as $\target{\Gamma_{fv}} = \target{\cdot} \sfcomma \itemtype{\bar{x}}{\bar{A}}$. Note that the well-formedness rules implicitly specify that expressions in $\target{\Gamma}$ may refer to labels in $\target{\fdef}$, but expressions in $\target{\fdef}$ cannot refer to variables in $\target{\Gamma}$. 
 
-\begin{lemma}[Type context weakening] If $\targetcon \vdash \itemtype{e}{A}$ and $\targetcon \vdash \itemtype{B}{U}$, then $\targetcon \sfcomma \itemtype{x}{B} \vdash \itemtype{e}{A}$.
+Both the type context and the label context have the weakening property -- a well-typed term is still well-typed in an extended type or label context. 
+
+\begin{lemma}[Type weakening] If $\targetcon \vdash \itemtype{e}{A}$ and $\targetcon \vdash \itemtype{B}{U}$, then $\targetcon \sfcomma \itemtype{x}{B} \vdash \itemtype{e}{A}$.
 \end{lemma}
 
-\begin{lemma}[Label context weakening] If $\targetcon \vdash \itemtype{e}{C}$,
-$\target{\fdef}\semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U}$, and
+\begin{lemma}[Label weakening] If $\targetcon \vdash \itemtype{e}{C}$,
+$\target{\fdef}\semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U}$, and\\
 $\target{\fdef}\semicolon \target{\Gamma_{fv}}\sfcomma \itemtype{x}{A} \vdash \itemtype{e'}{B}$, then
 $\sfpl \target{\fdef}\sfcomma \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e'}} \sfpr 
 \semicolon \target{\Gamma} \vdash \itemtype{e}{C}
@@ -89,7 +92,7 @@ $.
 \begin{figure}
 \renewcommand{\arraystretch}{1.3}
 	\begin{equation}
-		\tag{Var}
+		\tag{\targettext{Var}}
 		\frac
 			{\itemtype{x}{A} \in \target{\Gamma} \qquad
 			 \vdash \target{\fdef}\semicolon \target{\Gamma} }
@@ -97,14 +100,14 @@ $.
 	\end{equation}
 
 	\begin{equation}
-		\tag{Universe}
+		\tag{\targettext{Universe}}
 		\frac
 			{\vdash \target{\fdef}\semicolon \target{\Gamma} }
 			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{U_i}{U_{i+1}}}
 	\end{equation}
 
 	\begin{equation}
-		\tag{Pi}
+		\tag{\targettext{Pi}}
 		\frac
 			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{A}{U_i} \qquad
 			 \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A} \vdash \itemtype{B}{U_j}
@@ -113,7 +116,7 @@ $.
 	\end{equation}
 
 	\begin{equation}
-		\tag{Apply}
+		\tag{\targettext{Apply}}
 		\frac
 			{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \mathrel{:} \targetpi{x}{A}{B} \qquad
 			 \target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{e_2}{A} }
@@ -121,7 +124,7 @@ $.
 	\end{equation}
 
 	\begin{equation}
-		\tag{Label}
+		\tag{\targettext{Label}}
 		\frac
 			{\begin{array}{l}
 			  	\vdash \target{\fdef}\semicolon \target{\Gamma} \qquad\qquad\qquad \target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{\bar{e}}{\bar{A}} \\
@@ -134,7 +137,7 @@ $.
 	\end{equation}
 
 	\begin{equation}
-		\tag{Equiv}
+		\tag{\targettext{Equiv}}
 		\frac
 			{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{e}{A} \qquad
 			 \target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{B}{U} \qquad
@@ -147,50 +150,87 @@ $.
 \end{figure}
 
 \begin{figure}
-\renewcommand{\arraystretch}{1.3}
-	\begin{equation}
-		\tag{WF-Empty}
-		\frac{\vdash \target{\fdef} }{\quad \vdash \target{\fdef} \semicolon \target{\cdot} \quad}
-	\end{equation}\vspace{0.1cm}
+\vspace{0.5cm}
+\centering
+\AxiomC{$\vdash \target{\fdef}$}
+\RightLabel{(\targettext{WF-Empty})}
+\UnaryInfC{$\vdash \target{\fdef} \semicolon \target{\cdot}$}
+\DisplayProof
+\hspace{0.5cm}
+%===============================================================
+\AxiomC{$\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{A}{U}$}
+\RightLabel{(\targettext{WF-Type})}
+\UnaryInfC{$\vdash \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A}$}
+\DisplayProof
+\hspace{0.5cm}
+%===============================================================
+\AxiomC{$\phantom{\vdash \target{\fdef}}$}
+\RightLabel{(\targettext{WFL-Empty})}
+\UnaryInfC{$\quad \vdash \target{\cdot} \quad$}
+\DisplayProof
+\hspace{0.5cm}\\\vspace{0.5cm}
+%===============================================================
+\hspace{1.3cm}
+\AxiomC{$\target{\fdef}\semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U}$}
+\AxiomC{$\target{\fdef}\semicolon \target{\Gamma_{fv}}\sfcomma \itemtype{x}{A} \vdash \itemtype{e}{B}$}
+\RightLabel{(\targettext{WFL-Label})}
+\BinaryInfC{$\vdash \target{\fdef}\sfcomma 
+	\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$}
+\DisplayProof\\\vspace{0.1cm}
+\hspace{1.5cm} \text{where } $\target{\Gamma_{fv}} \triangleq \target{\cdot}\sfcomma \itemtype{\bar{x}}{\bar{A}}$
 
-	\begin{equation}
-		\tag{WF-Type}
-		\frac{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{A}{U}}
-		{\vdash \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A}}
-	\end{equation}
-
-	\begin{equation}
-		\tag{WFL-Empty}
-		\frac{}{\quad \vdash \target{\cdot} \quad}
-	\end{equation}
-	
-	\begin{multline}
-		\tag{WFL-Label}
-		\qquad\qquad\qquad
-		\frac{
-			\target{\fdef}\semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U} \qquad
-			\target{\fdef}\semicolon \target{\Gamma_{fv}}\sfcomma \itemtype{x}{A} \vdash \itemtype{e}{B}
-			}
-		{
-			\vdash \target{\fdef}\sfcomma \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}
-		}\\
-		\text{where } \target{\Gamma_{fv}} \triangleq \target{\cdot}\sfcomma \itemtype{\bar{x}}{\bar{A}}
-	\end{multline}
+%===============================================================
 	\caption{Well-formedness of DCC contexts and label contexts}
     \label{fig:dcc context}
+
 \end{figure}
+
+% \begin{figure}
+% \renewcommand{\arraystretch}{1.3}
+% 	\begin{equation}
+% 		\tag{\targettext{WF-Empty}}
+% 		\frac{\vdash \target{\fdef} }{\quad \vdash \target{\fdef} \semicolon \target{\cdot} \quad}
+% 	\end{equation}\vspace{0.1cm}
+
+% 	\begin{equation}
+% 		\tag{\targettext{WF-Type}}
+% 		\frac{\target{\fdef}\semicolon \target{\Gamma} \vdash \itemtype{A}{U}}
+% 		{\vdash \target{\fdef}\semicolon \target{\Gamma}\sfcomma \itemtype{x}{A}}
+% 	\end{equation}
+
+% 	\begin{equation}
+% 		\tag{\targettext{WFL-Empty}}
+% 		\frac{}{\quad \vdash \target{\cdot} \quad}
+% 	\end{equation}
+	
+% 	\begin{multline}
+% 		\tag{\targettext{WFL-Label}}
+% 		\qquad\qquad\qquad
+% 		\frac{
+% 			\target{\fdef}\semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \mathrel{:} \target{U} \qquad
+% 			\target{\fdef}\semicolon \target{\Gamma_{fv}}\sfcomma \itemtype{x}{A} \vdash \itemtype{e}{B}
+% 			}
+% 		{
+% 			\vdash \target{\fdef}\sfcomma \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}
+% 		}\\
+% 		\text{where } \target{\Gamma_{fv}} \triangleq \target{\cdot}\sfcomma \itemtype{\bar{x}}{\bar{A}}
+% 	\end{multline}
+% 	\caption{Well-formedness of DCC contexts and label contexts}
+%     \label{fig:dcc context}
+% \end{figure}
 
 \begin{figure}
 \renewcommand{\arraystretch}{1.3}
 
 	\begin{align*}
+		\tag{\targettext{Beta}}
 		\targetcon \vdash &\ \target{Apply\ } \target{\flabel}\{\target{\bar{e}}\}\ \target{e_2}\ \triangleright\  
 		\target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}] \\
 		& \text{where } \itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e_1}} \in \target{\fdef}
 	\end{align*}
 
 	\begin{equation}
-		\tag{Eq-eq}
+		\tag{\targettext{Eq-reduce}}
 		\frac
 			{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \target{e} \qquad 
 			 \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_2} \triangleright^* \target{e}}
@@ -198,7 +238,7 @@ $.
 	\end{equation}
 
 	\begin{equation}
-		\tag{Eta1}
+		\tag{\targettext{Eq-Eta1}}
 		\frac
 			{\begin{array}{l}
 			  \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \targetlab{\flabel}{\bar{e}} \qquad
@@ -211,7 +251,7 @@ $.
 	\end{equation}
 
 	\begin{equation}
-		\tag{Eta2}
+		\tag{\targettext{Eta2}}
 		\frac
 			{\begin{array}{l}
 			  \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \target{e_1'} \qquad
@@ -233,7 +273,7 @@ There is only one reduction rule in DCC: $\target{Apply\ } \targetlab{\flabel}{\
 reduces to $\target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}]$, where $\target{e_1}$ is found in the label's associated data $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e_1}}$ in the label context $\target{\fdef}$. A reduction sequence is noted as $\target{e_1} \triangleright^* \target{e_2}$, which means $\target{e_1}$ reduces to $\target{e_2}$ in zero or more steps.
 
 Two terms $\target{e_1}$ and $\target{e_2}$ are equivalent if they both reduce to the same term $\target{e}$ in a reduction sequence or they are $\eta$-equivalent. DCC's $\eta$-equivalence rules are similar to that of CC. 
-Rule (Eta1) defines that $\target{e_1}$ and $\target{e_2}$ are equivalent if they satisfy the following conditions.
+Rule (\targettext{Eq-Eta1}) defines that $\target{e_1}$ and $\target{e_2}$ are equivalent if they satisfy the following conditions.
 \begin{enumerate}
 	\item  $\target{e_1}$ reduces to a label $\targetlab{\flabel}{\bar{e}}$ in a reduction sequence.
 	\item  $\target{e_2}$ reduces to some expression $\target{e_2'}$ in a reduction sequence.
@@ -242,7 +282,7 @@ Rule (Eta1) defines that $\target{e_1}$ and $\target{e_2}$ are equivalent if the
 	in the label context $\target{\fdef}$.
 	\item  $\targetapp{e_2'}{x}$ is equivalent to $\target{e}\targetsub{\bar{e}}{\bar{x}}$ in $\targetcon\sfcomma\itemtype{x}{A}$.
 \end{enumerate}
-Rules (Eta1) and (Eta2) are symmetrical.
+Rules (\targettext{Eq-Eta1}) and (\targettext{Eq-Eta2}) are symmetrical.
 
 
 % Informally, an expression $\target{e}$ is equivalent to a label $\targetdef{\flabel}{\bar{e}}$ if, for all expressions arg, Apply L{e-} arg \equiv Apply e arg.

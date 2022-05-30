@@ -1,32 +1,39 @@
 % !TEX root = ../main.tex
 
-I now present the proof of type-preservation, which requires three lemmas: \textit{substitution}, \textit{preservation of reduction sequences}, and \textit{coherence}. I proved that dependently-typed defunctionalization preserves reduction sequences in Lemma~\ref{lem:prev sequence} with the help of {\ccs}, and now I prove the rest two lemmas in a similar way. The substitution lemma states that defunctionalization is compatible with substitutions.
+I now present the proof of type-preservation, which requires three lemmas: \textit{substitution}, \textit{preservation of reduction sequences}, and \textit{coherence}. I proved that dependently-typed defunctionalization preserves reduction sequences in Lemma~\ref{lem:prev sequence} with the help of {\ccs}, and now I prove the remaining two lemmas in a similar way. The substitution lemma states that defunctionalization is compatible with substitutions.
 
 \begin{lemma}[Substitution] 
-
+\label{lem:sub}
 If $\Gamma, x \goodcolon A \vdash e_1 \goodcolon B$ and $\Gamma \vdash e_2 \goodcolon A$, then $\target{\fdef} \semicolon \target{\Gamma} \vdash \bbracket{e_1 \sub{e_2}{x}} \equiv \target{e_1}\sub{\target{e_2}}{\target{x}}$, where $\target{\fdef} = \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}} \cup \target{\fdef_{e_1\sub{e_2}{x}}}$.
-\paragraph{Proof.} I know that $\Gamma, x \goodcolon A \vdash e_1 \goodcolon B$ and $\Gamma \vdash e_2 \goodcolon A$ implies that $\helper{\Gamma} \vdash \sigma(e_1\sub{e_2}{x}) \equiv \helper{e_1\sub{e_2}{x}}$ from the proof of Lemma~\ref{lem:sigma prev sequence}, which implies that $\target{\fdef'} \semicolon \hbracket{\helper{\Gamma}} \vdash \hbracket{\sigma(e_1\sub{e_2}{x})} \equiv \hbracket{\helper{e_1\sub{e_2}{x}}}$, where 
+\begin{proof}
+From the proof of Lemma~\ref{lem:sigma prev sequence}, we know that
+$\Gamma, x \goodcolon A \vdash e_1 \goodcolon B$ and $\Gamma \vdash e_2 \goodcolon A$ implies that $\helper{\Gamma} \vdash \sigma(e_1\sub{e_2}{x}) \equiv \helper{e_1\hsub{e_2}{x}}$. 
+This further implies that $\target{\fdef'} \semicolon \hbracket{\helper{\Gamma}} \vdash \hbracket{\sigma(e_1\sub{e_2}{x})} \equiv \hbracket{\helper{e_1\hsub{e_2}{x}}}$, where 
 $\target{\fdef'} = \hbracketd{\helper{\Gamma}} \cup \hbracketd{\helper{e_1}} \cup \hbracketd{\helper{e_2}} \cup \hbracketd{\sigma(e_1\sub{e_2}{x})}$.
 
-By (\ref{eq:commute_d}), $\target{\fdef'} \subseteq \target{\fdef}$. Also, $\hbracket{\sigma(e_1\sub{e_2}{x})} = \bbracket{e_1\sub{e_2}{x}}$, $\hbracket{\helper{\Gamma}} = \target{\Gamma}$, and $\hbracket{\helper{e_1}}\sub{\hbracket{\helper{e_2}}}{\target{x}} = \target{e_1}\targetsub{e_2}{x}$ by (\ref{eq: ccs substitution}) and (\ref{eq: ccs substitution}). Therefore, I have $\target{\fdef} \semicolon \target{\Gamma} \vdash \bbracket{e_1 \sub{e_2}{x}} \equiv \target{e_1}\sub{\target{e_2}}{\target{x}}$ by weakening. \qed
-\label{lem:sub}
+By (\ref{eq:commute_d}), $\target{\fdef'} \subseteq \target{\fdef}$. Also, $\hbracket{\sigma(e_1\sub{e_2}{x})} = \bbracket{e_1\sub{e_2}{x}}$, $\hbracket{\helper{\Gamma}} = \target{\Gamma}$, and $\hbracket{\helper{e_1}}\sub{\hbracket{\helper{e_2}}}{\target{x}} = \target{e_1}\targetsub{e_2}{x}$ by \eqref{ccs substitution} and \eqref{eq:commute}. Therefore, we have $\target{\fdef} \semicolon \target{\Gamma} \vdash \bbracket{e_1 \sub{e_2}{x}} \equiv \target{e_1}\sub{\target{e_2}}{\target{x}}$ by weakening.
+\end{proof}
 \end{lemma}
 
 The coherence lemma states that defunctionalization is compatible with CC's coherence judgements.
 
-\begin{lemma}[Coherence] If $\Gamma \vdash e_1 \equiv e_2$, then $\targetcon \vdash \target{e_1} \equiv \target{e_2}$, where
-$\target{\fdef} = \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}}$.
-\paragraph{Proof.} If $\Gamma \vdash e_1 \equiv e_2$, then I have $\helper{\Gamma} \vdash \helper{e_1} \equiv \helper{e_2}$
-by definition. By Lemma~\ref{lem:ccs coherence}, I have $\target{\fdef'} \semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}$, where
-$\target{\fdef'} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d} \cup \helper{\bbracket{e_2}_d}$.
-Since $\target{\fdef'} \subseteq \target{\fdef}$, I have $\targetcon \vdash \target{e_1} \equiv \target{e_2}$ by weakening. \qed
-
+\begin{lemma}[Coherence] 
 \label{lem:coherence}
+If $\Gamma \vdash e_1 \equiv e_2$, then $\targetcon \vdash \target{e_1} \equiv \target{e_2}$, where
+$\target{\fdef} = \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \cup \target{\fdef_{e_2}}$.
+\begin{proof}
+If $\Gamma \vdash e_1 \equiv e_2$, then we have $\helper{\Gamma} \vdash \helper{e_1} \equiv \helper{e_2}$
+by definition, since the source language never contain explicit substitutions. By Lemma~\ref{lem:ccs coherence}, we have $\target{\fdef'} \semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}$, where
+$\target{\fdef'} = \helper{\bbracket{\Gamma}_d} \cup \helper{\bbracket{e_1}_d} \cup \helper{\bbracket{e_2}_d}$.
+Since $\target{\fdef'} \subseteq \target{\fdef}$, we have $\targetcon \vdash \target{e_1} \equiv \target{e_2}$ by weakening.
+\end{proof}
 \end{lemma}
 
 Finally, I show type preservation with an induction on CC's type derivation rules. 
 
-\begin{theorem}[Type preservation] For all well-typed programs $\Gamma \vdash {e} \goodcolon {A}$,
+\begin{theorem}[Type preservation] 
+\label{theorem:type preservation}
+For all well-typed programs $\Gamma \vdash {e} \goodcolon {A}$,
 \begin{equation*}
 	{\Gamma} \vdash {e} \goodcolon {A} \Longrightarrow 
 	\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e}} \sfpr \semicolon \target{\Gamma} \vdash \target{e} \goodcolon \target{A},
@@ -35,47 +42,47 @@ where $(\target{\fdef_{\Gamma}}, \target{\fdef_{e}})
 = (\bbracket{{\Gamma}}_d, \bbracket{{e}}_d)$ and 
 $(\target{\Gamma}, \target{{e}}, \target{{A}}) 
 = (\bbracket{{\Gamma}}, \bbracket{{e}}, \bbracket{{A}})$.
-\paragraph{Proof.} I prove the following two statements together with a simulteneous induction on mutually-defined judgements $\vdash {\Gamma}$ and ${\Gamma} \vdash {e} \goodcolon {A}$.
+\begin{proof}
+By proving the following two statements together with a simulteneous induction on mutually-defined judgements $\vdash {\Gamma}$ and ${\Gamma} \vdash {e} \goodcolon {A}$.
 \begin{enumerate}
 	\item $\vdash {\Gamma} \Longrightarrow\  \vdash \target{\fdef_{\Gamma}} \semicolon \target{\Gamma}$.
 	\item ${\Gamma} \vdash {e} \goodcolon {A} \Longrightarrow 
 		\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e}} \sfpr \semicolon \target{\Gamma} \vdash \target{e} \goodcolon \target{A}$.
 \end{enumerate}
-Statement $1$ follows trivially from the inductive hypothesis. For statement $2$, cases (Var), (Universe), and (Pi) are trivial by induction, and (Equiv) follows directly from the coherence lemma. Cases (Apply) and (Lambda) statement $2$ require some efforts to prove.
-\begin{longtable}{p{0.05\linewidth} p{0.95\linewidth}}
-Case & (Apply): \\
-& Suppose that I have $\Gamma \vdash e_1\ e_2 \goodcolon B\sub{e_2}{x}$. My goal is to show $\targetcon \vdash \targetapp{e_1}{e_2} \goodcolon \bbracket{B\sub{e_2}{x}}$, where 
-$\target{\fdef} = \sfpl \target{\fdef_{\Gamma}} \cup \bbracket{e_1\ e_2}_d \sfpr$. I have
+Statement $1$ follows trivially from the inductive hypothesis. For statement $2$, cases (Var), (Universe), and (Pi) are trivial by induction, and (Equiv) follows directly from the coherence lemma. Cases (Apply) and (Lambda) require some efforts to prove.
+
+Case (Apply). \hspace{0.4cm}
+Suppose $\Gamma \vdash e_1\ e_2 \goodcolon B\sub{e_2}{x}$. The goal in this case is to show $\targetcon \vdash \targetapp{e_1}{e_2} \goodcolon \bbracket{B\sub{e_2}{x}}$, where 
+$\target{\fdef} = \sfpl \target{\fdef_{\Gamma}} \cup \bbracket{e_1\ e_2}_d \sfpr$. We have
 $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_1}} \sfpr \vdash
 \target{e_1} \goodcolon \targetpi{x}{A}{B}$ and
 $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_2}} \sfpr \vdash
-\target{e_2} \goodcolon \target{B}$ by the induction hypothesis. \\
-& By (Apply) and weakening, I have
-$\targetcon \vdash \targetapp{e_1}{e_2} \goodcolon \target{B}\targetsub{e_2}{x}$. By the substitution lemma, I have
+\target{e_2} \goodcolon \target{B}$ by the induction hypothesis.
+By (\targettext{Apply}) and weakening,
+$\targetcon \vdash \targetapp{e_1}{e_2} \goodcolon \target{B}\targetsub{e_2}{x}$. By the substitution lemma, 
 $\target{\fdef'} \semicolon \target{\Gamma} \vdash \target{B}\targetsub{e_2}{x} \equiv \bbracket{B\sub{e_2}{x}}$, where
-$\target{\fdef'} = \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_2}} \cup \target{\fdef_{B}} \cup \target{\fdef_{B\sub{e_2}{x}}} \sfpr$. My goal is true if $\target{\fdef'} \subseteq \target{\fdef}$. Indeed, I have:
+$\target{\fdef'} = \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_{e_2}} \cup \target{\fdef_{B}} \cup \target{\fdef_{B\sub{e_2}{x}}} \sfpr$. We have the goal if $\target{\fdef'} \subseteq \target{\fdef}$. Indeed,
 \begin{enumerate}
 \item $\target{\fdef_{\Gamma}} \subseteq \target{\fdef}$ by def.
 \item $\target{\fdef_{e_2}} \subseteq \target{\fdef}$ since $\target{\fdef_{e_2}} \subseteq \bbracket{e_1\ e_2}_d$ by def.
 \item $\target{\fdef_{B\sub{e_2}{x}}} \subseteq \target{\fdef}$ since $\target{\fdef_{B\sub{e_2}{x}}} \subseteq \bbracket{e_1\ e_2}_d$ by def.
 \item $\target{\fdef_{B}} \subseteq \target{\fdef}$, because $\target{\fdef_{B}} \subseteq \bbracket{\pitype{x}{A}{B}}$ by def., $\bbracket{\pitype{x}{A}{B}} \subseteq \target{\fdef_{e_1}}$ by $\Gamma \vdash e_1 \goodcolon \pitype{x}{A}{B}$ and Lemma~\ref{lem:subset}, and $\target{\fdef_{e_1}} \subseteq \target{\fdef}$ by def.
 \end{enumerate}
-\\
 
-Case & (Lambda):\\
-& Suppose that I have $\Gamma \vdash \lami{i}{x}{A}{e} \goodcolon \pitype{x}{A}{B}$.
-My goal here is $\targetcon \vdash \targetlab{\flabel_i}{\bar{x}} \goodcolon \targetpi{x}{A}{B}$, where 
+Case (Lambda). \hspace{0.4cm}
+Suppose $\Gamma \vdash \lami{i}{x}{A}{e} \goodcolon \pitype{x}{A}{B}$.
+The goal here is to show that $\targetcon \vdash \targetlab{\flabel_i}{\bar{x}} \goodcolon \targetpi{x}{A}{B}$, where 
 $\target{\fdef} = \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_e}\sfpr \sfcomma 
-\itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$. I have
-$\Gamma \vdash \bar{x} \goodcolon \bar{A}$ since $\bar{x}$ are well-typed free variables, therefore, I have 
-$\targetcon \vdash \itemtype{\bar{x}}{\bar{A}}$ by the inductive hypothesis and weakening. I also have $\target{\flabel_i}$ in $\target{\fdef}$ by definition.\\
-& If $\vdash \targetcon$ is true, I can show the goal with DCC's type rule (Label). I can obtain $\vdash \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_e}\sfpr \semicolon \target{\Gamma}$ from the induction hypothesis and $\Gamma, x \goodcolon A \vdash e \goodcolon B$. Letting 
-$\target{\Gamma_{fv}} = \target{\cdot}\sfcomma\itemtype{\bar{x}}{\bar{A}}$, if I can show that 
+\itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$. We have
+$\Gamma \vdash \bar{x} \goodcolon \bar{A}$ since $\bar{x}$ are well-typed free variables, therefore, we have 
+$\targetcon \vdash \itemtype{\bar{x}}{\bar{A}}$ by the inductive hypothesis and weakening. We also have $\target{\flabel_i}$ in $\target{\fdef}$ by definition.
+If $\vdash \targetcon$ is true, the goal can be shown with DCC's type rule (\targettext{Label}). $\vdash \sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_e}\sfpr \semicolon \target{\Gamma}$ can be obtained from the induction hypothesis and $\Gamma, x \goodcolon A \vdash e \goodcolon B$. Letting 
+$\target{\Gamma_{fv}} = \target{\cdot}\sfcomma\itemtype{\bar{x}}{\bar{A}}$, if the following statements are true, then	 we have $\vdash \targetcon$ by (\targettext{WFL-Label}) and weakening.
 \begin{enumerate}[label=(\alph*)]
-\item $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_e}\sfpr \semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \goodcolon \target{U} $ and 
-\item $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_e}\sfpr \semicolon \target{\Gamma_{fv}} \sfcomma \itemtype{x}{A} \vdash \target{e} \goodcolon \target{B} $,
+\item $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_e}\sfpr \semicolon \target{\Gamma_{fv}} \vdash \targetpi{x}{A}{B} \goodcolon \target{U} $.
+\item $\sfpl \target{\fdef_{\Gamma}} \cup \target{\fdef_e}\sfpr \semicolon \target{\Gamma_{fv}} \sfcomma \itemtype{x}{A} \vdash \target{e} \goodcolon \target{B} $.
 \end{enumerate}
-then I have $\vdash \targetcon$ by (WFL-Label) and weakening. By Lemma~\ref{lem:fv}, I have $\text{FV}(\lami{i}{x}{A}{e}) \vdash (\lami{i}{x}{A}{e}) \goodcolon \pitype{x}{A}{B}$, so $\text{FV}(\lami{i}{x}{A}{e}) \vdash \pitype{x}{A}{B} \goodcolon U$ and
-$\text{FV}(\lami{i}{x}{A}{e}), x \goodcolon A \vdash e \goodcolon B$. Therefore, I have conditions (a) and (b) by the induction hypothesis and weakening. \qed
-\end{longtable}
+By Lemma~\ref{lem:fv}, $\text{FV}(\lami{i}{x}{A}{e}) \vdash (\lami{i}{x}{A}{e}) \goodcolon \pitype{x}{A}{B}$, so $\text{FV}(\lami{i}{x}{A}{e}) \vdash \pitype{x}{A}{B} \goodcolon U$ and
+$\text{FV}(\lami{i}{x}{A}{e}), x \goodcolon A \vdash e \goodcolon B$. Therefore, conditions (a) and (b) are true by the induction hypothesis and weakening.
+\end{proof}
 \end{theorem}

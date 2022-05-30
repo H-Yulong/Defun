@@ -3,7 +3,6 @@
 *.aux
 *.blg
 *.gz
-*.pdf
 *.lof
 *.lot
 *.toc

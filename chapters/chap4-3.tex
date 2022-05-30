@@ -1,15 +1,14 @@
 % !TEX root = ../main.tex
 
-
-
 \section{Transformation}
+\label{sec:4.3}
 
 This section gives the definition of dependently typed defunctionalization transformation.
 The transformation consists of two parts: a transformation $\bbracket{-}$ for terms and a meta-function $\bbracket{-}_d$ that extracts function definitions from the source program. The term transformation produces the target program and the meta-function $\bbracket{-}_d$ gives a label context, which functions similarly to the auxiliary function \textit{apply} in polymorphic defunctionalization.
 
 \subsection{Term transformation}
 
-The term transformation $\bbracket{-}$ turns expressions in CC into expressions in DCC. I define the transformation in with a new judgement of the form $\Gamma \vdash e \goodcolon A \leadsto \target{e}$, and $\bbracket{e} \triangleq \target{e}$. Figure~\ref{fig:dcc transformation} gives the derivation rules of this judgement.
+The term transformation $\bbracket{-}$ turns expressions in CC into expressions in DCC. I define the transformation with a new judgement of the form $\Gamma \vdash e \goodcolon A \leadsto \target{e}$, and $\bbracket{e} \triangleq \target{e}$. Figure~\ref{fig:dcc transformation} gives the derivation rules of this judgement.
 
 \begin{figure}
 	\begin{equation}
@@ -55,12 +54,12 @@ The term transformation $\bbracket{-}$ turns expressions in CC into expressions 
     \label{fig:dcc transformation}
 \end{figure}
 
-The term transformation simply transcribes the variables, universes, $\Pi$-types, and applications in CC to their counterparts in DCC. Functions in the source language are translated to labels in the target language. The transformation also turns ground types like the natural numbers ($Nat, 0, 1, \cdots$) directly into the corresponding ground types ($\target{Nat}\sfcomma\target{0}\sfcomma\target{1}\cdots$) in DCC.
+The term transformation simply transcribes the variables, universes, $\Pi$-types, applications, and base types and values in CC to their counterparts in DCC compositionally. Functions in the source language are translated into labels in the target language.
 
 Defunctionalization requires a unique correspondence between each label and each source-program function.
-I use a convention that every function in the transformation's input $e$ is tagged with a unique identifier $i$ ($i \in Nat$), and its corresponding label's name is $\target{\flabel_i}$ ($\alpha$-equivalent functions get the same tag).
+I use a convention that every function in the transformation's input $e$ is tagged with a unique identifier $i$ ($i \in \mathbb{N}$), and its corresponding label's name is $\target{\flabel_i}$ ($\alpha$-equivalent functions get the same tag).
 
-The transformation turns a function $(\lami{i}{x}{A}{e})$ into a label $\targetlab{\flabel_i}{\bar{x}}$, where $\target{\bar{x}}$ come from the function's free variables $\bar{x}$ (T-Lambda). The meta-function FV (see Definition~\ref{def:FV}) computes all free variables and their types involved in a well-typed CC-expression. Note that FV is different from \textit{fv}, the conventional free variable function that computes all the \textit{unbound variables} in an expression. In dependently typed languages, the type of a free variable may contain other free variables, and their types may still contain other free variables, and so on! Therefore, FV$(e)$ should recursively work out all the variables needed for $e$ to be well-typed. 
+The transformation turns a function $(\lami{i}{x}{A}{e})$ into a label $\targetlab{\flabel_i}{\bar{x}}$, where $\target{\bar{x}}$ come from the function's free variables $\bar{x}$ (T-Lambda). The meta-function FV (see Definition~\ref{def:FV}) computes all free variables and their types involved in a well-typed CC-expression. Note that FV is different from \textit{fv}, the conventional free variable function that computes all the \textit{unbound variables} in an expression. In dependently typed languages, the type of a free variable may contain other free variables, and their types may still contain other free variables, and so on! Therefore, FV$(e)$ must recursively work out all the variables needed for $e$ to be well-typed. 
 
 \begin{definition}FV$(e)$ takes $\Gamma \vdash e \goodcolon A$, the type judgement of $e$, as an implicit argument. It firstly computes all the unbound variables $x_1, \cdots, x_n$ in $e$ and in $A$, then calls itself recursively on types of these variables, and finally returns the union of all free variables and their types it found. 
 \begin{equation*}
@@ -75,7 +74,7 @@ The transformation turns a function $(\lami{i}{x}{A}{e})$ into a label $\targetl
 \label{def:FV}
 \end{definition}
 
-Here, the union of two type contexts ${\Gamma_1} \cup {\Gamma_2}$ is ${\Gamma_1}$ appended with all the variable-expression pairs ${x} \goodcolon {A}$ that only appear in ${\Gamma_2}$ in the order of their apperence. Variable $x$ would always be paired with the same expression $A$ in $\Gamma_1$ and $\Gamma_2$ in the usage because all pairs $x \goodcolon A$ in $\Gamma_1$ and $\Gamma_2$ come from the same $\Gamma$. Since FV($e$) gives all the variables needed to correctly type $e$, if $\Gamma \vdash e : A$ implies that $\text{FV}(e) \vdash e : A$.
+Here, the union of two type contexts ${\Gamma_1} \cup {\Gamma_2}$ is ${\Gamma_1}$ appended with all the variable-expression pairs ${x} \goodcolon {A}$ that only appear in ${\Gamma_2}$ in the order of their apperence. Variable $x$ would always be paired with the same expression $A$ in $\Gamma_1$ and $\Gamma_2$ in this usage, because all pairs $x \goodcolon A$ in $\Gamma_1$ and $\Gamma_2$ come from the same context $\Gamma$. Since FV($e$) gives all the variables needed to correctly type $e$, $\Gamma \vdash e \goodcolon A$ implies that $\text{FV}(e) \vdash e \goodcolon	 A$.
 
 \begin{lemma}If $\Gamma \vdash e \goodcolon A$, then $\text{FV}(e) \vdash e \goodcolon A$.
 \label{lem:fv}
@@ -83,8 +82,8 @@ Here, the union of two type contexts ${\Gamma_1} \cup {\Gamma_2}$ is ${\Gamma_1}
 
 \subsection{Extracting function definitions}
 
-Defunctionalization is not complete with just the term transformation -- it turns functions into labels but throws away the function body. The meta-function $\bbracket{-}_d$ takes a CC-expression and returns a label context $\target{\fdef}$.
-For every function $(\lami{i}{x}{A}{e})$ in the source program, the following item is in $\target{\fdef}$, where $\{\itemtype{\bar{x}}{\bar{A}}\}$, $\targetpi{x}{A}{B}$, and $\target{e}$ correspond to the free variables $(\bar{x} \mathrel{:} \bar{A})$ in $\lambda^i$, the type of $\lambda^i$ and the function body $e$ respectively.
+Defunctionalization is not complete with just the term transformation which turns functions into labels but throws away the function body. The meta-function $\bbracket{-}_d$ takes a CC-expression and returns a label context $\target{\fdef}$.
+For every function $(\lami{i}{x}{A}{e})$ in the source program, $\target{\fdef}$ contains the implementation of that function as an item in the following form, where $\{\itemtype{\bar{x}}{\bar{A}}\}$, $\targetpi{x}{A}{B}$, and $\target{e}$ correspond to the free variables $(\bar{x} \mathrel{:} \bar{A})$ in $\lambda^i$, the type of $\lambda^i$ and the function body $e$ respectively.
 \begin{equation*}
 	\itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}
 \end{equation*}
@@ -94,14 +93,14 @@ Function extraction is more subtle than transforming terms. Functions may appear
 	a \goodcolon\ \pitype{f}{(Nat \rightarrow Nat)}{A\ (\lam{n}{Nat}{(f\ n) + 1})} \\
 	e\ & \triangleq\ a\ (\lam{x}{Nat}{x+1})
 \end{align*}
-$A$ is a family of types indexed by functions of type $Nat \rightarrow Nat$ and $a\ f$ constructs an element of type $A\ (\lam{n}{Nat}{(f\ n) + 1})$. According to the rule (Apply), the type of $e$ is 
+$A$ is a family of types indexed by functions of type $Nat \rightarrow Nat$ and $a\ f$ constructs an element of type $A\ (\lam{n}{Nat}{(f\ n) + 1})$. According to the rule ({Apply}), the type of $e$ is 
 \begin{align*}
 	& (A\ (\lam{n}{Nat}{(f\ n) + 1}))\sub{(\lam{x}{Nat}{x+1})}{f}\\
-	=& A\ (\lam{n}{Nat}{((\lam{x}{Nat}{x+1})\ n) + 1}).
+	= & A\ (\lam{n}{Nat}{((\lam{x}{Nat}{x+1})\ n) + 1}).
 \end{align*}
 Hence, a new function definition appeared in the type of $e$ as the result of a substitution! This new function should be included in the label context $\target{\fdef}$ to achieve type preservation. Extracting function definitions in $e$ involes finding every function that appeared in the type derivation of $e$. In other words, the transformation defunctionalizes not just the source-language expression, but its entire type derivation tree.
 
-I define the $\bbracket{-}_d$ with a new judgement of the form $\Gamma \vdash e \goodcolon A \leadsto_d \target{\fdef}$, and $\bbracket{e}_d \triangleq \target{\fdef}$. Figure~\ref{fig:dcc def} gives the derivation rules of this judgement.
+I define $\bbracket{-}_d$ with a new judgement of the form $\Gamma \vdash e \goodcolon A \leadsto_d \target{\fdef}$, and $\bbracket{e}_d \triangleq \target{\fdef}$. Figure~\ref{fig:dcc def} gives the derivation rules of this judgement.
 
 \begin{figure}
 	\begin{equation}
@@ -150,7 +149,7 @@ I define the $\bbracket{-}_d$ with a new judgement of the form $\Gamma \vdash e 
 	\end{equation} \vspace{0.5cm}
 	\begin{equation}
 		\tag{D-Equiv}
-		\qquad\qquad
+		\quad
 		\frac
 			{\Gamma \vdash e \goodcolon A \leadsto_d \target{\fdef} \qquad \Gamma \vdash B \goodcolon U \leadsto_d \target{\fdef_B}}
 			{\Gamma \vdash e \goodcolon B \leadsto_d \target{\fdef} \cup \target{\fdef_B}}
@@ -159,7 +158,7 @@ I define the $\bbracket{-}_d$ with a new judgement of the form $\Gamma \vdash e 
     \label{fig:dcc def}
 \end{figure}
 
-Variables does not contain function definitions, so the definitions in $x$ are just the definitions in its type $A$ (D-Var). Type derivation of universes do not involve function at all (D-Universe). Definitions in a dependent function type $\pitype{x}{A}{B}$ are the \textit{union} of definitions in $A$ and $B$ (D-Pi). The union here is defined in the same way as the union of contexts (see Definition~\ref{def:FV}), and there is no ambiguity since different functions correspond to different label names.
+Variables do not contain function definitions, so the definitions in $x$ are just the definitions in its type $A$ (D-Var). Type derivations of universes do not involve functions at all (D-Universe). Definitions in a dependent function type $\pitype{x}{A}{B}$ are the \textit{union} of definitions in $A$ and $B$ (D-Pi). The union here is defined in the same way as the union of contexts (see Definition~\ref{def:FV}), and there is no ambiguity since different functions correspond to different label names.
 
 Definitions in an application $e_1\ e_2$ are the union of definitions in $e_1$, $e_2$, and $B\sub{e_2}{x}$, since substitution creates new function definitions (D-Apply). For a lambda abstraction $\lami{i}{x}{A}{e}$, the definitions it contains are the union of definitions in $e$ and $A$ appended with $\target{\flabel_i}$, the definition of itself (D-Lambda).
 If $e$ has type $B$ by the conversion rule, then the definitions involved in the derivation of $\Gamma \vdash e \goodcolon B$ are the union of definitions in the derivation of $\Gamma \vdash e \goodcolon A$ and definitions in $B$ (D-Equiv).
@@ -179,34 +178,38 @@ Since the transformation defunctionalizes the entire type derivation tree of a t
 
 \begin{lemma} For all well-typed terms $\Gamma \vdash e \goodcolon A$ in CC, $\bbracket{A}_d \subseteq \bbracket{e}_d$.
 \label{lem:subset}
-\end{lemma}
-\paragraph{Proof.} I proof this lemma with an induction on rules defined in Figure~\ref{fig:dcc def}. 
-I only show for case (D-Lambda), since all other cases are either trivially true or follows simply from the definition.
+\begin{proof}
+By induction on rules defined in Figure~\ref{fig:dcc def}. 
+All cases except (D-Lambda) are either trivially true or follows simply from the definition.
 
-My goal in case (D-Lambda) is to show that $\bbracket{\pitype{x}{A}{B}}_d \subseteq \bbracket{\lami{i}{x}{A}{e}}_d$, and I have
+The goal in case (D-Lambda) is to show that $\bbracket{\pitype{x}{A}{B}}_d \subseteq \bbracket{\lami{i}{x}{A}{e}}_d$.
+By assumption,
 \begin{equation*}
 \Gamma \vdash \lami{i}{x}{A}{e} \goodcolon \pitype{x}{A}{B}\ \leadsto_d\ \target{\fdef_A} \cup \target{\fdef_e} \sfcomma \itemdef{\target{\flabel_i}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}.
 \end{equation*}
-In other words, $\bbracket{\lami{i}{x}{A}{e}}_d = \bbracket{A}_d \cup \bbracket{e}_d$ plus the definition of $\lambda^i$. By definition, $\bbracket{\pitype{x}{A}{B}}_d\ = \bbracket{A}_d \cup \bbracket{B}_d$, and I have $\bbracket{A}_d \subseteq \bbracket{\lami{i}{x}{A}{e}}_d$. 
-I have $\bbracket{B}_d \subseteq \bbracket{e}_d$ by the induction hypothesis, since $\Gamma, x:A \vdash e \goodcolon B$. Therefore, $\bbracket{B}_d \subseteq \bbracket{\lami{i}{x}{A}{e}}_d$. \qed
-
+In other words, $\bbracket{\lami{i}{x}{A}{e}}_d = \bbracket{A}_d \cup \bbracket{e}_d$ with definition of $\lambda^i$ appended to it. By definition, $\bbracket{\pitype{x}{A}{B}}_d\ = \bbracket{A}_d \cup \bbracket{B}_d$, and hence $\bbracket{A}_d \subseteq \bbracket{\lami{i}{x}{A}{e}}_d$. 
+We have $\bbracket{B}_d \subseteq \bbracket{e}_d$ by the induction hypothesis, since $\Gamma, x:A \vdash e \goodcolon B$. Therefore, $\bbracket{B}_d \subseteq \bbracket{\lami{i}{x}{A}{e}}_d$.
+\end{proof}
+\end{lemma}
 The term transformation and the process of extracting function definitions ($\bbracket{-}$ and $\bbracket{-}_d$) act pointwise on CC contexts. In other words,
 \begin{equation*}
 \begin{array}{l @{\qquad} l}
-	\bbracket{\cdot}\ \triangleq\ \target{\cdot}\  & \bbracket{\Gamma, x \goodcolon A}\ \triangleq \bbracket{\Gamma}\sfcomma \target{x} \goodcolon \bbracket{A}\\
-	\bbracket{\cdot}_d \triangleq\ \target{\cdot}\  & \bbracket{\Gamma, x \goodcolon A}_d \triangleq \bbracket{\Gamma}_d\cup\bbracket{A}_d\\
+	\bbracket{\cdot}\ \triangleq\ \target{\cdot},\  & \bbracket{\Gamma, x \goodcolon A}\ \triangleq \bbracket{\Gamma}\sfcomma \target{x} \goodcolon \bbracket{A},\\
+	\bbracket{\cdot}_d \triangleq\ \target{\cdot},\  & \bbracket{\Gamma, x \goodcolon A}_d \triangleq \bbracket{\Gamma}_d\cup\bbracket{A}_d.\\
 \end{array}
 \end{equation*}
 
-Finally, I give an example of dependently typed defunctionalization, which also counts as a piece of empirical evidence that the transformation is type-preserving and correct.
+Finally, I give an example of dependently typed defunctionalization to illustrate that the transformation is type-preserving and correct.
 
-\begin{exmp}Let the source program $p$ be the an application of the polymorphic identity function in CC (see Example 2.2.1), and the lambda abstrctions are tagged with natural numbers.
+\begin{exmp}
+\label{ex:defun example} 
+Let the source program $p$ be the an application of the polymorphic identity function in CC (see Example 2.2.1), and the lambda abstrctions are tagged with natural numbers.
 \begin{align*}
 	p &\triangleq (\lami{0}{A}{U_0}{(\lami{1}{x}{A}{x})})\ Nat\ 1\\
 	\cdot &\vdash p \mathrel{:} Nat\\
 	\cdot &\vdash p\ \triangleright (\lam{x}{Nat}{x})\ 1\ \triangleright\ 1
 \end{align*}
-The source program is a function with no free variables appling to the ground type $Nat$ and then to $1$. So, the term transformation is a label supplied with no free-variable values appling to $\target{Nat}$ and then to $\target{1}$.
+The source program is a function with no free variables applied to the base type $Nat$ and then to $1$. So, the term transformation is a label supplied with no free-variable terms applied to $\target{Nat}$ and then to $\target{1}$.
 \begin{equation*}
 	\bbracket{p} = 
 	\target{Apply}\ \sfpl \target{Apply}\ \targetlab{\flabel_0}{}\ \target{Nat} \sfpr \ \target{1}
@@ -221,7 +224,7 @@ Function $\lambda^0$ has no free variable; its type is $\pitype{A}{U_0}{A \right
 	{\targetlab{\flabel_1}{A}}
 \end{align*}
 If the transformation is type preserving and correct, the type of $\bbracket{p}$ should be $\target{Nat}$ and it should reduce to $\target{1}$ (in context $\target{\fdef} \semicolon \cdot$).
-By (Apply), the type of $\sfpl \target{Apply}\ \targetlab{\flabel_0}{}\ \target{Nat} \sfpr$ is $\sfpl \targetpi{x}{A}{A} \sfpr \targetsub{Nat}{A} = \targetpi{x}{Nat}{Nat}$. So, the type of $\bbracket{p}$ is $\target{Nat}$. Also,
+By (\targettext{Apply}), the type of $\sfpl \target{Apply}\ \targetlab{\flabel_0}{}\ \target{Nat} \sfpr$ is $\sfpl \targetpi{x}{A}{A} \sfpr \targetsub{Nat}{A} = \targetpi{x}{Nat}{Nat}$. So, the type of $\bbracket{p}$ is $\target{Nat}$. Also,
 \begin{equation*}
 	\target{\fdef} \semicolon \cdot \vdash
 	\target{Apply}\ \sfpl \target{Apply}\ \targetlab{\flabel_0}{}\ \target{Nat} \sfpr \ \target{1}\ \triangleright\ 

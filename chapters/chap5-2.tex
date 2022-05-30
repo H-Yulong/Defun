@@ -3,7 +3,8 @@
 \section{Type safety and consisntency}
 \label{sec:5.2}
 
-As a dependent type theory, DCC should be type-safe when it acts as a programming language and consistent when interpreted as a logic system. I proof these properties in this section by defining a \textit{backward transformation} from DCC to CC. If the backward transformation preserves reduction sequences, then reducing a term in DCC is equivalent to reducing a term in CC. If the transformation is type-preserving and it turns the logical interpretation of \textit{false} in DCC into that of CC, then valid proofs (well-typed programs) in DCC correspond to valid proofs in CC. This reduces the problem of proving the type safety and consistency of DCC to proving that of CC, which is a standard result. In other words, I show that DCC can be modelled by CC in a consistent and meaning-preserving way. This is a standard technique in the literature~\cite{DBLP:conf/cpp/BoulierPT17,DBLP:conf/pldi/BowmanA18}. There is no particular difficulty in proving lemmas in this section; all proofs follow from induction. 
+As a dependent type theory, DCC should be type-safe when it acts as a programming language and consistent when interpreted as a logic system. I prove these properties in this section by defining a \textit{backward transformation} from DCC to CC. If the backward transformation preserves reduction sequences, then reducing a term in DCC is equivalent to reducing a term in CC. If the transformation is type-preserving and it turns the logical interpretation of \textit{false} in DCC into that of CC, then valid proofs (well-typed programs) in DCC correspond to valid proofs in CC. This reduces the problem of proving the type safety and consistency of DCC to proving that of CC, which is a standard result. In other words, I show that DCC can be modelled by CC in a consistent and meaning-preserving way. This is a standard technique in the literature~\cite{DBLP:conf/cpp/BoulierPT17,DBLP:conf/pldi/BowmanA18}. Type preservation for the backward transformation also requires the \textit{substitution}, \textit{preservation of reduction sequences}, and \textit{coherence} lemmas, similar to the proof of Theorem~\ref{theorem:type preservation}.
+There is no particular difficulty in proving lemmas in this section. 
 
 I define the backward transformation $\bluebr{-}$ with a new judgement (Figure~\ref{fig:backward transformation}) of the form $\targetcon \vdash \itemtype{e}{A} \leadsto_b e$ and $\bluebr{\target{e}} \triangleq e$. It transcribes variables, universes, $\Pi$-types, and applications back to their corresponding forms in CC. For a label term $\targetlab{\flabel}{\bar{x}}$ where 
 $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}}$, the transformation turns it into 
@@ -66,12 +67,13 @@ In CC, the interpretation of the logical \textit{false} is $\pitype{A}{U_0}{A}$.
 Next, I show that the backward transformation is compatible with subsitutions. As a convention in this chapter, I use $e$ to stand for $\bluebr{\target{e}}$ when there is no ambiguity.
 
 \begin{lemma} If $\targetcon \sfcomma \itemtype{x}{A} \vdash \itemtype{e_1}{B}$ and $\targetcon \vdash \itemtype{e_2}{A}$, then $\bluebr{\target{e_1}\targetsub{e_2}{x}} = e_1\sub{e_2}{x}$.
-\paragraph{Proof.} I proof by induction on the type derivation of $\target{e_1}$. The only non-trivial case is (Label), all other cases follow directly from the induction hypothesis.
+\begin{proof}
+By induction on the type derivation of $\target{e_1}$. The only non-trivial case is (Label), all other cases follow directly from the induction hypothesis.
 
-In case (Label), I have $\targetcon \sfcomma \itemtype{y}{C} \vdash \targetlab{\flabel}{\bar{e}} : \targetpi{x}{A}{B}$,
+In case (Label), the assumptions are $\targetcon \sfcomma \itemtype{y}{C} \vdash \targetlab{\flabel}{\bar{e}} : \targetpi{x}{A}{B}$,
 $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e}} \in \target{\fdef}$, 
-and $\targetcon \vdash \itemtype{e_2}{C}$. My goal is showing that 
-$ \bluebr{\sfpl \targetlab{\flabel}{\bar{e}} \sfpr \targetsub{e_2}{y}} = (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})\sub{e_2}{y}$. Indeed, I have
+and $\targetcon \vdash \itemtype{e_2}{C}$. The goal is showing that 
+$ \bluebr{\sfpl \targetlab{\flabel}{\bar{e}} \sfpr \targetsub{e_2}{y}} = (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})\sub{e_2}{y}$. Indeed, we have
 \begin{equation*}
 	\bluebr{\sfpl \targetlab{\flabel}{\bar{e}} \sfpr \targetsub{e_2}{y}} = 
 	\bluebr{\target{\flabel}\{\target{\bar{e}}\targetsub{e_2}{y}\}}\\
@@ -83,33 +85,36 @@ by the induction hypothesis, and
 	\lam{x}{((A\sub{\bar{e}}{\bar{x}}) \sub{e_2}{y})} {((e\sub{\bar{e}}{\bar{x}})\sub{e_2}{y})}\\
 	&= \lam{x}{A\sub{(\bar{e}\sub{e_2}{y})}{\bar{x}}}{e\sub{(\bar{e}\sub{e_2}{y})}{\bar{x}}}
 \end{align*}
-since $y$ is not free in $A$ and $e$ ($\bar{x}$ are all the free variables in them). \qed
+since $y$ is not free in $A$ and $e$ ($\bar{x}$ are all the free variables in them).
+\end{proof}
 \end{lemma}
 
 Similar to proofs in Section 5.1, I show preservation of reduction sequences by showing that the transformation preserves small-step reductions.
-\begin{lemma} If $\targetcon \vdash \target{e_1} \triangleright \target{e_2}$, then $\Gamma \vdash e_1 \triangleright^* e_2$.
-\paragraph{Proof.} There is only one reduction rule in DCC.
-
+\begin{lemma} If $\targetcon \vdash \target{e_1} \triangleright^* \target{e_2}$, then $\Gamma \vdash e_1 \triangleright^* e_2$.
+\label{lem:back prev sequence}
+\begin{proof}
+Firstly, the backward transformation preservs small-step reductions. There is only one reduction rule (\targettext{Beta}) in DCC.
 Assume that 
 $\targetcon \vdash \ \target{Apply\ } \target{\flabel}\{\target{\bar{e}}\}\ \target{e_2}\ \triangleright\  \target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}]$ and 
 $\itemdef{\target{\flabel}}{\itemtype{\bar{x}}{\bar{A}}}{\targetpi{x}{A}{B}}{\target{e_1}} \in \target{\fdef}$.
-I have $\bluebr{\target{Apply\ } \target{\flabel}\{\target{\bar{e}}\}\ \target{e_2}} = (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e_1\sub{\bar{e}}{\bar{x}}})$, and
+We have $\bluebr{\target{Apply\ } \target{\flabel}\{\target{\bar{e}}\}\ \target{e_2}} = (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e_1\sub{\bar{e}}{\bar{x}}})$, and
 \begin{align*}
 \Gamma \vdash (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e_1\sub{\bar{e}}{\bar{x}}})\ e_2\ &\triangleright\
 (e_1\sub{\bar{e}}{\bar{x}})\sub{e_2}{x}\\
 &= e_1[\bar{e} \slash \bar{x}, e_2 \slash x] \text{ since $x$ is not free in $\bar{e}$}\\
-&= \bluebr{\target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}]} \text{ by substitution.} \qed
+&= \bluebr{\target{e_1}[\target{\bar{e}} \slash \target{\bar{x}} \sfcomma \target{e_2} \slash \target{x}]} \text{ by substitution.} 
 \end{align*}
-\label{lem:back prev sequence}
+Therefore, the backward transformation preserves reduction sequences by a trivial induction on the number of small steps in the sequence.
+\end{proof}
 \end{lemma}
-
 I also need to show coherence for the backward transformation.
 
 \begin{lemma}If $\targetcon \vdash \target{e_1} \equiv \target{e_2}$, then $\Gamma \vdash e_1 \equiv e_2$.
-\paragraph{Proof.} I proof with an induction on DCC's equivalence rules. I only show case (Eq-Eta1) since case (Eq-Eta2) is symmetric and Rule (Eq-reduce) is trivial by preservation of reduction sequences.
+\begin{proof}
+By induction on DCC's equivalence rules. Only proof steps for case (\targettext{Eq-Eta1}) are shown. Case (\targettext{Eq-Eta2}) is symmetric to (\targettext{Eq-Eta1}), and (\targettext{Eq-reduce}) follows directly by preservation of reduction sequences.
 
-In case (Eq-Eta1), I have
-\begin{equation}
+In case (\targettext{Eq-Eta1}), the assumption is 
+\begin{equation*}
 	\frac
 	{\begin{array}{l}
 	  \target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \triangleright^* \targetlab{\flabel}{\bar{e}} \qquad
@@ -119,26 +124,27 @@ In case (Eq-Eta1), I have
       \target{e}\targetsub{\bar{e}}{\bar{x}} \equiv \targetapp{e_2'}{x}
 	\end{array}}
 	{\target{\fdef}\semicolon \target{\Gamma} \vdash \target{e_1} \equiv \target{e_2}}
-\end{equation}
-and my goal is $\Gamma \vdash e_1 \equiv e_2$. By Lemma~\ref{lem:back prev sequence}, 
+\end{equation*}
+and the goal is $\Gamma \vdash e_1 \equiv e_2$. By Lemma~\ref{lem:back prev sequence}, 
 $\Gamma \vdash e_1\ \triangleright^* (\lam{x}{A\sub{\bar{e}}{\bar{x}}}{e\sub{\bar{e}}{\bar{x}}})$ and 
 $\Gamma \vdash e_2\ \triangleright^* e_2'$.
-By the induction hypothesis and the substitution lemma, 
-\[
-\Gamma, x \goodcolon A \vdash e\sub{\bar{e}}{x} \equiv e_2'\ x.
-\]
-Therefore, $\Gamma \vdash e_1 \equiv e_2$ by CC's equivalence rule (Eq-Eta1). \qed
+By the induction hypothesis and the substitution lemma, \\
+$\Gamma, x \goodcolon A \vdash e\sub{\bar{e}}{x} \equiv e_2'\ x$.
+Therefore, $\Gamma \vdash e_1 \equiv e_2$ by CC's equivalence rule (Eq-Eta1).
+\end{proof}
 \end{lemma}
 
 The final lemma I need is type preservation.
 
 \begin{lemma} If $\targetcon \vdash \itemtype{e}{A}$, then $\Gamma \vdash e \goodcolon A$.
-\paragraph{Proof.} I prove the following two statements together with a simulteneous induction on mutually-defined judgements $\vdash \targetcon$ and $\targetcon \vdash \itemtype{e}{A}$.
+\begin{proof}
+By proving the following two statements together with a simulteneous induction on mutually-defined judgements $\vdash \targetcon$ and $\targetcon \vdash \itemtype{e}{A}$.
 \begin{enumerate}
 	\item $\vdash \targetcon \Longrightarrow\ \vdash \Gamma$.
 	\item $\targetcon \vdash \itemtype{e}{A} \Longrightarrow\ {\Gamma} \vdash {e} \goodcolon {A}$.
 \end{enumerate}
-Statement $1$ follows trivially from the inductive hypothesis. For statement $2$, cases (Var), (Universe), and (Pi) are trivial by induction. (Equiv) follows directly from the coherence lemma, and cases (Apply) and (Label) are proved easily with the substitution lemma. \qed
+Statement $1$ follows trivially from the inductive hypothesis. For statement $2$, cases (\targettext{Var}), (\targettext{Universe}), and (\targettext{Pi}) are trivial by induction. (\targettext{Equiv}) follows directly from the coherence lemma, and cases (\targettext{Apply}) and (\targettext{Label}) are proved easily with the substitution lemma.
+\end{proof}
 
 % In case (Label), I have
 % \begin{equation*}
@@ -156,7 +162,7 @@ Statement $1$ follows trivially from the inductive hypothesis. For statement $2$
 %  \pitype{x}{A\sub{\bar{e}}{\bar{x}}}{B\sub{\bar{e}}{\bar{x}}}$.
 \end{lemma}
 
-% As a corollary of the lemmas shown in this section, DCC is type-safe and consistent since CC is.
+As a corollary of the lemmas shown in this section, DCC is type-safe and consistent since CC is.
 
 
 

@@ -1,11 +1,11 @@
 % !TEX root = ../main.tex
 
-This chapter shows that the polymorphic defunctionalization technique cannot be adapted to dependent types. Section~\ref{sec:3.1} introduces \textit{inductive families}, a more general version of GADTs in dependently-typed languages. Section~\ref{sec:3.2} proves that it is impossible to define type-preserving defunctionalization using inductive families.
+This chapter shows that Pottier and Gauthier's polymorphic defunctionalization technique cannot be adapted to dependent types. Section~\ref{sec:3.1} introduces \textit{inductive families}, a more general version of GADTs in dependently-typed languages. Section~\ref{sec:3.2} proves that it is impossible to generalize polymorphic defunctionalization with GADTs to dependently-typed defunctionalization with inductive families.
 
 \section{Inductive families}
 \label{sec:3.1}
 
-This section introduces inductively defined data types (inductive families), and I present code examples in Agda, a dependently-typed programming language with a Haskell-like syntax. No knowledge of Agda is required to understand the contents of this section, except for two things:
+This section introduces inductively defined data types in dependent types (inductive families), and I present code examples in Agda, a dependently-typed programming language with a Haskell-like syntax. No knowledge of Agda is required to understand the contents of this section, except for two things:
 \begin{itemize}
   \item In Agda, there is an infinite hierarchy of predicative universes \[ \mathtt{Set_0 : Set_1 : Set_2 : \cdots} \] similar to the hierarchy in CC.
   \item The dependent function type $\pitype{x}{A}{B}$ is written as \texttt{(x:A) -> B} in Agda's syntax.
@@ -13,7 +13,7 @@ This section introduces inductively defined data types (inductive families), and
 
 Agda supports inductive families, which are essentially inductively defined data types indexed by terms~\cite{AgdaDoc}. Their constructors may return elements in an arbitrary type of the indexed family. Example~\ref{ex:fin} shows the definition of \texttt{Fin}, the inductive family of finite sets.
 
-\begin{exmp} \texttt{Fin} is a data type indexed by natural numbers (\texttt{Nat}) such that there are exactly \texttt{n} valid expressions of type \texttt{Fin n}. Given a natural number \texttt{n}, \texttt{fzero}constructs an element of type \texttt{Fin n+1}; given a natural number \texttt{n} and an element of type \texttt{Fin n}, \texttt{fsucc} constructs an element of type \texttt{Fin n+1}.
+\begin{exmp} \texttt{Fin} is a data type indexed by natural numbers (\texttt{Nat}) such that there are exactly \texttt{n} valid expressions of type \texttt{Fin n}. Given a natural number \texttt{n}, \texttt{fzero} constructs an element of type \texttt{Fin n+1}; given a natural number \texttt{n} and an element of type \texttt{Fin n}, \texttt{fsuc} constructs an element of type \texttt{Fin n+1}.
 \begin{lstlisting}[escapechar=@]
 data Fin : Nat -> @\codemath{Set_0}@ where
     fzero : (n : Nat) -> Fin (n + 1)
@@ -47,38 +47,43 @@ Concretely, the universe of every argument type \codemath{S_i} (the type of \cod
   \item mention \texttt{D} in the form of \texttt{\codemath{S_i} = (\codemath{x_1 : C_1}) -> \codemath{\cdots} -> (\codemath{x_k : C_k}) -> D}, where \texttt{D} does not occur in any \codemath{C_j} (arguments to \texttt{D} omitted).
 \end{itemize}
 
-The requirements for strict posivitity and universes are shared across many dependently-typed languages that support inductive families, like Coq's Gallina~\cite{?} or Timany and Sozeau's pCuIC~\cite{?}. 
+The requirements for strict posivitity and universes are shared across many dependently-typed languages that support inductive families, like Coq's Gallina~\cite{CoqDoc} or Timany and Sozeau's pCuIC~\cite{DBLP:journals/corr/abs-1710-03912}. 
 
 \section{Failure to defunctionalize}
 \label{sec:3.2}
 
-In this section, I illustrate that it is impossible to adapt the method of performing polymorphic defunctionalization to dependently-typed languagesusing inductive families. Chapter 2 illustrated that type-preserving defunctionalization can be done with ADTs for simple types and GADTs for polymorphic types. In polymorphic defunctionalization, a function of type \texttt{a -> b} is translated to a constructor of a GADT \texttt{lam}, and the constructor's return type is \texttt{(a, b) lam} (Example 2.1.2). Similarly, we can try to define an inductive family \texttt{Pi}, and translate each dependent function of type $\pitype{x}{A}{B}$ to a constructor of \texttt{Pi A B} (suppose that \texttt{Pi} has a way of encoding \texttt{B}'s dependency on terms of type \texttt{A}). 
+In this section, I illustrate that it is impossible to adapt the method of performing polymorphic defunctionalization to dependently-typed languages using inductive families. Chapter 2 illustrated that type-preserving defunctionalization can be done with ADTs for simple types and GADTs for polymorphic types. In polymorphic defunctionalization, a function of type \texttt{a -> b} is translated to a constructor of a GADT \texttt{lam}, and the constructor's return type is \texttt{(a, b) lam} (see Example ~\ref{ex:poly dfc}). Similarly, we can try to define an inductive family \texttt{Pi}, and translate each dependent function of type $\pitype{x}{A}{B}$ to a constructor of \texttt{Pi A B} (suppose that \texttt{Pi} has a way of encoding \texttt{B}'s dependency on terms of type \texttt{A}). 
 
 Suppose the source language is CC and the target language is Agda. Let $\bbracket{-}$ denote the defunctionalization transformation. I assume that $\bbracket{\lam{x}{A}{e}} =$ \texttt{Fun}, i.e.~$\bbracket{-}$ turns a function in source to a unique constructor \texttt{Fun} of an inductively defined data type in target, and each free variable in $\lam{x}{A}{e}$ corresponds to an argument to \texttt{Fun}. 
 
 Ideally, $\bbracket{-}$ should be type-preserving -- well-typed source programs are translated to well-typed target programs. Clearly, the hypothesis of having a type-preserving transformation where $\bbracket{\pitype{x}{A}{B}} =$ \texttt{Pi }$\bbracket{A}\ \bbracket{B}$ does not hold, since it translates functions of type $A \rightarrow (A \rightarrow A)$ to constructors returning \texttt{Pi} $\bbracket{A}$ \texttt{(Pi} $\bbracket{A}$ $\bbracket{A}$ \texttt{)}, which fails the positivity check for inductive definitions. In fact, we cannot translate $\pitype{x}{A}{B}$ to an element of any inductive family in a type-preserving way. I proof this with the help of the following lemma.
 
-\begin{lemma} (Universe preservation) Type-preserving transformation $\bbracket{-}$ turns a universe in CC to a universe in Agda and it preserves the universe hierarchy. 
-\paragraph{Proof} 
-We have $\cdot \vdash 0 : Nat : U_0 : U_1 : \cdots$ in CC (with freely-introduced natural numbers as a base type). To satisfy type preservation, we must have $\bbracket{0} : \bbracket{Nat} : \bbracket{U_0}: \bbracket{U_1} : \cdots$ in the target language. 
-Therefore, $\bbracket{U_0}, \bbracket{U_1}, \cdots$ are universes (since they are the types of types) and they form a universe hierarchy in the target language. \qed
-\label{lemma : universe}
+\begin{lemma}[Universe Preservation]
+\label{lemma:universe}
+Type-preserving transformation $\bbracket{-}$ turns a universe in CC to a universe in Agda and it preserves the universe hierarchy. 
+\begin{proof} 
+We have $\cdot \vdash 0 \goodcolon Nat \goodcolon U_0 \goodcolon U_1 \goodcolon \cdots$ in CC (with freely-introduced natural numbers as a base type). To satisfy type preservation, we must have $\bbracket{0} \goodcolon \bbracket{Nat} \goodcolon \bbracket{U_0}\goodcolon \bbracket{U_1} \goodcolon \cdots$ in the target language. 
+Therefore, $\bbracket{U_0}, \bbracket{U_1}, \cdots$ are universes (since they are the types of types) and they form a universe hierarchy in the target language.
+\end{proof}
 \end{lemma}
 By universe preservation, for all CC expression $e_1, e_2$, if $e_1$ is in a higher universe than $e_2$:
 \begin{align*}
-  & \Gamma \vdash e_1 : A, \quad \Gamma \vdash A : U_m, \\
-  & \Gamma \vdash e_2 : B, \quad \Gamma \vdash B : U_n \ (m > n),
+  & \Gamma \vdash e_1 \goodcolon A, \quad \Gamma \vdash A \goodcolon U_m, \\
+  & \Gamma \vdash e_2 \goodcolon B, \quad \Gamma \vdash B \goodcolon U_n \ (m > n),
 \end{align*}
 then $\bbracket{e_1}$ will also be in a higher universe than $\bbracket{e_2}$ in Agda.
 \begin{align*}
-  & \bbracket{e_1} : \bbracket{A}, \quad \bbracket{A} : \mathsf{Set_i},\\
-  & \bbracket{e_2} : \bbracket{B}, \quad \bbracket{B} : \mathsf{Set_j}\ (\mathsf{i > j}).
+  & \bbracket{e_1} \goodcolon \bbracket{A}, \quad \bbracket{A} \goodcolon \mathsf{Set_i},\\
+  & \bbracket{e_2} \goodcolon \bbracket{B}, \quad \bbracket{B} \goodcolon \mathsf{Set_j}\ (\mathsf{i > j}).
 \end{align*}
 Now, I proof that type-preserving defunctionalization cannot be defined using inductive families.
 
-\begin{theorem} If $\bbracket{-}$ is type-preserving, then $\bbracket{\pitype{x}{A}{B}}$ cannot be an element of any inductive family.
-\paragraph{Proof} 
-Assume that $\bbracket{-}$ is type-preserving, $\bbracket{\pitype{x}{A}{B}}$ is an element of an inductive family \texttt{D}, and $\Gamma \vdash \pitype{x}{A}{B} : U_m$. Assume $\bbracket{U_m} =$ \codemath{Set_n}, which is reasonable by Lemma \ref{lemma : universe}. Data type \texttt{D} must be defined in the following form:
+
+\begin{theorem}
+\label{theorem:dfc}
+If $\bbracket{-}$ is type-preserving, then $\bbracket{\pitype{x}{A}{B}}$ cannot be an element of any inductive family.
+\begin{proof}
+Assume that $\bbracket{-}$ is type-preserving, $\bbracket{\pitype{x}{A}{B}}$ is an element of an inductive family \texttt{D}, and $\Gamma \vdash \pitype{x}{A}{B} \mathrel{:} U_m$. Assume $\bbracket{U_m} =$ \codemath{Set_n}, which is reasonable by Lemma \ref{lemma:universe}. Data type \texttt{D} must have the following general form.
 \begin{lstlisting}[escapechar=@]
 data D : (@\codemath{y_1}@ : @\codemath{T_1}@) -> @\codedots@ -> (@\codemath{y_n}@ : @\codemath{T_n}@) -> @\codemath{Set_n}@
 \end{lstlisting}
@@ -87,11 +92,11 @@ Pick an arbitrary function $f$ in the source language and suppose that its type 
 \begin{lstlisting}[escapechar=@]
 Fun : (@\codemath{z_1}@ : @\codemath{S_1}@) -> @\codedots@ -> (@\codemath{z_m}@ : @\codemath{S_m}@) -> (D @\codemath{t_1}@ @\codedots@ @\codemath{t_n}@)
 \end{lstlisting}
-where each \codemath{(z_i : S_i)} corresponds to a free variable in $f$. Since \texttt{Fun} is a valid constructor, the universe of each \codemath{S_i} must be smaller than \codemath{Set_n} to pass the universe check. However, this is not true in general: $f$ may contain free variables from universes higher than $U_m$, which are translated to terms in universes higher than \codemath{Set_n}, by Lemma \ref{lemma : universe}. Therefore, we have a contradiction. $\qed$
-\label{theorem: dfc}
+where each \codemath{(z_i : S_i)} corresponds to a free variable in $f$. Since \texttt{Fun} is a valid constructor, the universe of each \codemath{S_i} must be smaller than \codemath{Set_n} to pass the universe check. However, this is not true in general: $f$ may contain free variables from universes higher than $U_m$, which are translated to terms in universes higher than \codemath{Set_n}, by Lemma \ref{lemma:universe}. Therefore, we have a contradiction.
+\end{proof}
 \end{theorem}
 
-A type-preserving transformation cannot take $\bbracket{\pitype{x}{A}{B}} =$ \texttt{Pi }$\bbracket{A}\ \bbracket{B}$, as results of this translation fail the positivity check. Theorem \ref{theorem: dfc} shows that no inductive family can be used for type-preserving defunctionalization, and the key problem is the universe check that forbids impredicative constructors. If a function contains free variables in universes higher than the universe of the function's type, this function will be translated to a constructor that takes arguments in universes higher than the universe of its inductive family, which fails the universe check. Previous defunctionalization methods relied on the fact that any type can be an argument to a constructor, which is impredicative in nature.
+A type-preserving transformation cannot take $\bbracket{\pitype{x}{A}{B}} =$ \texttt{Pi }$\bbracket{A}\ \bbracket{B}$, since some results of this translation fail the positivity check. Theorem \ref{theorem:dfc} shows that no inductive family can be used for type-preserving defunctionalization, and the key problem is the universe check that forbids impredicative constructors. If a function contains free variables in universes higher than the universe of the function's type, this function will be translated to a constructor that takes arguments in universes higher than the universe of its inductive family, which fails the universe check. Previous defunctionalization methods relied on the fact that any type can be an argument to a constructor, which is impredicative in nature.
 
 
 

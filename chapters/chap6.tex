@@ -1,0 +1,72 @@
+% !TEX root = ../main.tex
+
+This dissertation studied type-preserving defunctionalization for a variant of the Calculus of Constructions. I illustrated that Pottier and Gauthier's type-preserving polymorphic defunctionalization does not extend to dependently-typed languages. Then, I presented abstract defunctionalization as an alternative method. Abstract defunctionalization consists of a target language (the Defunctionalized Calculus of Constructions) and a transformation from the source language to the target language. The target language has a primitive notion of function labels that fits the abstract description of defunctionalization. I proved the transformation type-preserving and correct, and I showed that the target language is type-safe as a programming language and consistent as a logic.
+
+In this chapter, I first cover serval topics and issues in implementing the target language, then I end with a discussion on future work.
+
+\section{Implementation of abstract defunctionalization}
+
+This section briefly introduces my implementation of the Defunctionalized Calculus of Constructions (DCC) and the transformation from CC to DCC in OCaml.
+The implementation allowed me to check mechanically for complicated and counter-intuitive examples of dependently-typed defunctionalization, which are difficult and tedious to check by hand. 
+% Notable files in the code directory are:
+% \begin{itemize}
+%     \item \texttt{cc.ml}, the implementation of the source language CC.
+%     \item \texttt{dcc.ml}, the implementation of the target language DCC.
+%     \item \texttt{transformation.ml}, the defunctionalization transformation from CC to DCC.
+% \end{itemize}
+
+\paragraph{Syntax} The code structure is based on Bauer's tutorial of implementing dependent type theory in OCaml~\cite{ImplementDependentType}.
+The abstract syntax of DCC is defined with the following inductive type \texttt{expr}.
+\begin{lstlisting}
+    type expr = 
+        | Var of variable | Universe of int
+        | Label of label * expr list
+        | Apply of expr * expr
+        | Pi of variable * expr * expr
+        | Unit | UnitType
+    type context = {
+        def : (label * defItem) list; (* The label context *)
+        con : (variable * expr) list; (* The type context  *)
+    }
+\end{lstlisting}
+The data types above are the exact resemblance to DCC's syntax in Figure~\ref{fig:dcc syntax}, and it includes the unit type as a base type. Types \texttt{variable} and \texttt{label} are string-integer pairs -- the string is the name of the variable or label, and the integer is used for distinguishing variables or labels named after the same string. Data type \texttt{defItem} is a record for keeping the data associated with a label -- the list of free variables, etc. (definition omitted for simplicity). I implemented utility functions \texttt{subst}, \texttt{normalize}, and \texttt{equal} to perform substitutions, normalize terms, and determine whether two terms are equivalent. 
+\begin{lstlisting}
+    subst : (variable * expr) list -> expr -> expr
+    normalize : context -> expr -> expr
+    equal : context -> expr -> expr -> bool
+\end{lstlisting}
+
+\paragraph{Type-checking and transformation}
+In DCC, an expression has at most one type (up to equivalence), meaning that given a context and a well-typed expression, the type of the expression can be worked out algorithmically according to the type rules. I implemented function \texttt{infer\_type} for inferring the type of a well-typed term and function \texttt{type\_check} for checking whether a given type judgement is derivable. 
+\begin{lstlisting}
+    infer_type : context -> expr -> expr
+    type_check : context -> expr -> expr -> bool
+\end{lstlisting}
+Given inputs \texttt{(con, e, t)}, \texttt{type\_check} firstly checks if the context \texttt{con} is well-formed. Then, it computes \texttt{t' = (infer\_type con e)} and checks if \texttt{t'} is equivalent to \texttt{t}. 
+
+The defunctionalization transformation is implemented with function \texttt{transform\_full}. Given a type judgement \texttt{(con, e, t)} in CC (it corresponds to $\Gamma \vdash e \goodcolon A$), \texttt{transform\_full} firstly assigns a unique integer-valued tag to each lambda abstraction in \texttt{(con, e, t)}. Then, it computes the term transformation and extracts function definitions for the labelled CC judgement according to the rules defined in Figure~\ref{fig:dcc transformation} and Figure~\ref{fig:dcc def}. It returns a triple \texttt{(con', e', t')}, which are the transformed context, term, and type. I can use \texttt{(type\_check con' e' t')} to see if the transformation preserves types for a particular input.
+
+\paragraph{Checking well-formedness}
+DCC's type rules presented in Figure~\ref{fig:dcc typing} are not suitable for practical implementation, since it checks the well-formedness of the context in every sub-derivation tree of variables, universes, and labels. 
+This is very inefficient. Since there is no way to extend the label context in a DCC program, \texttt{type\_check} only needs to check its well-formedness once at the beginning of the type-checking process. Similarly, it only checks the well-formedness of the type context once, and makes sure that whenever it extends the type context with a variable-expression pair, that expression is a valid type in the old context. 
+
+\section{Future work}
+\paragraph{Recursive functions}
+I plan to adapt abstract defunctionalization to the Calculus of Inductive Constructions (CIC), the extension of CC with inductive families and recursive functions. This involves defining a syntax for inductive families, pattern matching, and recursions in the target language DCC. While recursive functions do not add extra difficulty to the defunctionalization transformation~\cite{DBLP:conf/popl/PottierG04}, adding recursions to DCC is a challenge.
+Dependently-typed languages only accept terminating functions, since non-terminating functions make the type system inconsistent. Languages like Agda and Coq have \textit{syntactic conditions} to guarantee termination of recursive functions. 
+% For example, Agda only allows recursive calls on a strict sub-expression of the argument. I cannot define a recursive function \texttt{f} of type \texttt{Nat -> Nat} in Agda like
+% \begin{lstlisting}
+% 	f zero = 1
+% 	f (suc n) = (f (suc n)) + 2
+% \end{lstlisting}
+% since \texttt{suc n} is not a strict sub-expression of itself.
+DCC should be extended with syntactic termination conditions for recursive functions, and defunctionalization should transform the termination conditions from the source language to those in the target language. 
+ 
+\paragraph{Embedding DCC into Agda}
+It is possible to formalize DCC as an embedding in a proof assistant like Agda. The benefit of doing so is having an \textit{intrinsic} abstract syntax that only contains well-typed terms, and the meta-theoretic properties of DCC can be formally studied in a machine-checked setting. 
+However, dealing with variable binding and substitutions in the meta-theory is challenging. A promising tool for formalizing variable binding is the second-order abstract syntax~\cite{DBLP:journals/pacmpl/FioreS22}, but it only applies to simply-typed systems at the moment. Other examples of embedding a dependent theory into another used quotient-inductive types~\cite{DBLP:conf/popl/AltenkirchK16} or shallow embeddings~\cite{DBLP:journals/corr/abs-1907-07562}, but it is not clear how to adapt these methods to model DCC's label context. 
+
+\paragraph{Type-preserving compilers for dependent types} 
+Ager et al. showed that closure conversion, continuation-passing style transformation (CPS), and defunctionalization could be combined to derive compilers and virtual machines of the untyped lambda calculus~\cite{ager2003interpreter}.
+Dependently-typed closure conversion and the CPS transformation are available in the literature~\cite{DBLP:journals/pacmpl/BowmanCRA18,DBLP:conf/pldi/BowmanA18}. With abstract defunctionalization, the next step is to investigate whether the derivation method by Ager et al. leads to a type-preserving compiler for dependently-typed languages, which makes checking the correctness of separately-compiled and linked programs possible.
+
