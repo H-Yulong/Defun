@@ -1,4 +1,4 @@
-# Defunctionalization for dependently typed languages
+# Defunctionalization with dependent types
 This is the Tex repository for my PartIII dissertation.
 
 ## Abstract
