@@ -66,14 +66,14 @@ is equivalent to another expression. This is essentially a variant of the $\eta$
 		\frac
 			{\helper{\Gamma} \vdash \helper{e_1} \goodcolon \helper{\Pi x} \goodcolon \helper{A}. \helper{B} \qquad 
 			\helper{\Gamma} \vdash \helper{e_2} \goodcolon \helper{A}}
-			{\helper{\Gamma} 	\vdash \helper{e_1} \ \helper{e_2} \goodcolon \helper{B\hsub{e2}{x}}}
+			{\helper{\Gamma} 	\vdash \helper{e_1} \ \helper{e_2} \goodcolon \helper{B\hsub{e_2}{x}}}
 	\end{equation}
 	\begin{equation}
 		\tag{\helper{Subst}}
 		\frac
 			{\helper{\Gamma}, \helper{x} \goodcolon \helper{A} \vdash \helper{e_1} \goodcolon \helper{B} \qquad 
 			 \helper{\Gamma} \vdash \helper{e_2} \goodcolon \helper{A}}
-			{\helper{\Gamma} \vdash \helper{e_1\hsub{e_2}{x}} \goodcolon \helper{B\hsub{e2}{x}}}
+			{\helper{\Gamma} \vdash \helper{e_1\hsub{e_2}{x}} \goodcolon \helper{B\hsub{e_2}{x}}}
 	\end{equation}
 	\begin{align*}
 		\tag{\helper{Sub-Var1}}
